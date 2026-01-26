@@ -1,12 +1,29 @@
-import { Heart, Menu, User, Plus } from 'lucide-react';
+import { Heart, Menu, User, Plus, Settings, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/hooks/useAuth';
 
 export const Header = () => {
+  const navigate = useNavigate();
+  const { user, isAdmin, isModerator, signOut, loading } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -20,7 +37,7 @@ export const Header = () => {
         
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-6">
-          <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <a href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             Inicio
           </a>
           <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -36,14 +53,49 @@ export const Header = () => {
         
         {/* Actions */}
         <div className="flex items-center gap-3">
-          <Button 
-            variant="ghost" 
-            size="sm"
-            className="hidden sm:flex text-muted-foreground hover:text-foreground"
-          >
-            <User className="w-4 h-4 mr-2" />
-            Iniciar sesión
-          </Button>
+          {!loading && (
+            <>
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="hidden sm:flex text-muted-foreground hover:text-foreground"
+                    >
+                      <User className="w-4 h-4 mr-2" />
+                      Mi cuenta
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    {(isAdmin || isModerator) && (
+                      <>
+                        <DropdownMenuItem onClick={() => navigate('/admin')}>
+                          <Settings className="w-4 h-4 mr-2" />
+                          Panel Admin
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Cerrar sesión
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="hidden sm:flex text-muted-foreground hover:text-foreground"
+                  onClick={() => navigate('/auth')}
+                >
+                  <User className="w-4 h-4 mr-2" />
+                  Iniciar sesión
+                </Button>
+              )}
+            </>
+          )}
           <Button 
             size="sm"
             className="bg-primary text-primary-foreground hover:bg-primary/90 glow"
@@ -62,7 +114,7 @@ export const Header = () => {
             </SheetTrigger>
             <SheetContent className="bg-background border-border">
               <nav className="flex flex-col gap-4 mt-8">
-                <a href="#" className="text-lg text-foreground hover:text-primary transition-colors">
+                <a href="/" className="text-lg text-foreground hover:text-primary transition-colors">
                   Inicio
                 </a>
                 <a href="#" className="text-lg text-foreground hover:text-primary transition-colors">
@@ -75,9 +127,31 @@ export const Header = () => {
                   Contacto
                 </a>
                 <hr className="border-border" />
-                <a href="#" className="text-lg text-foreground hover:text-primary transition-colors">
-                  Iniciar sesión
-                </a>
+                {user ? (
+                  <>
+                    {(isAdmin || isModerator) && (
+                      <a 
+                        href="/admin" 
+                        className="text-lg text-foreground hover:text-primary transition-colors"
+                      >
+                        Panel Admin
+                      </a>
+                    )}
+                    <button 
+                      onClick={handleSignOut}
+                      className="text-lg text-left text-foreground hover:text-primary transition-colors"
+                    >
+                      Cerrar sesión
+                    </button>
+                  </>
+                ) : (
+                  <a 
+                    href="/auth" 
+                    className="text-lg text-foreground hover:text-primary transition-colors"
+                  >
+                    Iniciar sesión
+                  </a>
+                )}
               </nav>
             </SheetContent>
           </Sheet>

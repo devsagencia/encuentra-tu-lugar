@@ -1,12 +1,14 @@
 import { Star, Eye, BadgeCheck, Crown } from 'lucide-react';
 import { Profile, categories } from '@/data/mockProfiles';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 interface ProfileCardProps {
   profile: Profile;
+  onViewProfile?: (profile: Profile) => void;
 }
 
-export const ProfileCard = ({ profile }: ProfileCardProps) => {
+export const ProfileCard = ({ profile, onViewProfile }: ProfileCardProps) => {
   const category = categories.find(c => c.id === profile.category);
   
   return (
@@ -97,6 +99,15 @@ export const ProfileCard = ({ profile }: ProfileCardProps) => {
             </Badge>
           ))}
         </div>
+        
+        {/* View Button */}
+        <Button 
+          onClick={() => onViewProfile?.(profile)}
+          className="w-full mt-3"
+        >
+          <Eye className="w-4 h-4 mr-2" />
+          Ver perfil
+        </Button>
       </div>
     </div>
   );

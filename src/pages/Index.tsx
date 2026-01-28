@@ -4,8 +4,7 @@ import { Hero } from '@/components/Hero';
 import { CategoryTabs } from '@/components/CategoryTabs';
 import { SearchFilters } from '@/components/SearchFilters';
 import { ProfileCard } from '@/components/ProfileCard';
-import { ProfileDetailDialog } from '@/components/ProfileDetailDialog';
-import { mockProfiles, Category, Profile } from '@/data/mockProfiles';
+import { mockProfiles, Category } from '@/data/mockProfiles';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -16,13 +15,6 @@ const Index = () => {
   const [city, setCity] = useState('Todas las ciudades');
   const [ageRange, setAgeRange] = useState<[number, number]>([18, 60]);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
-  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
-
-  const handleViewProfile = (profile: Profile) => {
-    setSelectedProfile(profile);
-    setProfileDialogOpen(true);
-  };
 
   const clearFilters = () => {
     setKeyword('');
@@ -127,11 +119,7 @@ const Index = () => {
             {filteredProfiles.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredProfiles.map((profile) => (
-                  <ProfileCard 
-                    key={profile.id} 
-                    profile={profile} 
-                    onViewProfile={handleViewProfile}
-                  />
+                  <ProfileCard key={profile.id} profile={profile} />
                 ))}
               </div>
             ) : (
@@ -158,13 +146,6 @@ const Index = () => {
           <p className="mt-2">Solo para mayores de 18 años.</p>
         </div>
       </footer>
-
-      {/* Profile Detail Dialog */}
-      <ProfileDetailDialog
-        profile={selectedProfile}
-        open={profileDialogOpen}
-        onOpenChange={setProfileDialogOpen}
-      />
     </div>
   );
 };

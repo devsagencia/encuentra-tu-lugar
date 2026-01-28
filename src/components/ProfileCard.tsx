@@ -1,15 +1,20 @@
 import { Star, Eye, BadgeCheck, Crown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Profile, categories } from '@/data/mockProfiles';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 interface ProfileCardProps {
   profile: Profile;
-  onViewProfile?: (profile: Profile) => void;
 }
 
-export const ProfileCard = ({ profile, onViewProfile }: ProfileCardProps) => {
+export const ProfileCard = ({ profile }: ProfileCardProps) => {
+  const navigate = useNavigate();
   const category = categories.find(c => c.id === profile.category);
+  
+  const handleViewProfile = () => {
+    navigate(`/perfil/${profile.id}`);
+  };
   
   return (
     <div className="glass-card group overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1 animate-fade-in">
@@ -89,7 +94,7 @@ export const ProfileCard = ({ profile, onViewProfile }: ProfileCardProps) => {
         
         {/* Tags */}
         <div className="flex flex-wrap gap-2">
-          {profile.tags.map((tag) => (
+          {profile.tags.slice(0, 3).map((tag) => (
             <Badge
               key={tag}
               variant="outline"
@@ -98,11 +103,19 @@ export const ProfileCard = ({ profile, onViewProfile }: ProfileCardProps) => {
               {tag}
             </Badge>
           ))}
+          {profile.tags.length > 3 && (
+            <Badge
+              variant="outline"
+              className="text-xs border-border/50 text-muted-foreground"
+            >
+              +{profile.tags.length - 3}
+            </Badge>
+          )}
         </div>
         
         {/* View Button */}
         <Button 
-          onClick={() => onViewProfile?.(profile)}
+          onClick={handleViewProfile}
           className="w-full mt-3"
         >
           <Eye className="w-4 h-4 mr-2" />

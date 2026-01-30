@@ -1,3 +1,3 @@
 git add .
-git commit -m "aplicacion dashboard suscripciones y pagos"
+git commit -m "cambios para despliegue"
 git push

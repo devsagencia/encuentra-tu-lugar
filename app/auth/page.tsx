@@ -49,18 +49,12 @@ export default function AuthPage() {
       const isPrivileged = roles.includes('admin') || roles.includes('moderator');
       if (isPrivileged) return '/admin';
 
-      // Si ya tiene anuncio (perfil), llévalo a su panel.
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
-      if (profileError) throw profileError;
-
-      return profile?.id ? '/cuenta' : '/crear-anuncio';
+      // Usuario normal: siempre al dashboard de usuario.
+      // Dentro del dashboard ya se ofrece "Crear anuncio" si aún no tiene perfil.
+      return '/cuenta';
     } catch {
       // Si falla la lectura de roles, no bloqueamos el acceso del usuario normal
-      return '/crear-anuncio';
+      return '/cuenta';
     }
   };
 
@@ -88,7 +82,7 @@ export default function AuthPage() {
         const redirectTo = await getDefaultRedirectForUser(user.id);
         router.push(redirectTo);
       } else {
-        router.push('/crear-anuncio');
+        router.push('/cuenta');
       }
     }
 
@@ -120,7 +114,7 @@ export default function AuthPage() {
           description: 'Tu cuenta ha sido creada exitosamente',
         });
         const next = searchParams.get('next');
-        router.push(next || '/crear-anuncio');
+        router.push(next || '/cuenta');
       }
     }
 

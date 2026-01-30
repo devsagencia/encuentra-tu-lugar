@@ -10,6 +10,8 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   isModerator: boolean;
+  profileId: string | null;
+  hasProfile: boolean;
   signIn: (
     email: string,
     password: string
@@ -29,6 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isModerator, setIsModerator] = useState(false);
+  const [profileId, setProfileId] = useState<string | null>(null);
 
   const checkRoles = async (userId: string) => {
     try {
@@ -46,6 +49,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const checkProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) throw error;
+      setProfileId(data?.id ?? null);
+    } catch (error) {
+      console.error('Error checking profile:', error);
+      setProfileId(null);
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -55,10 +74,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (session?.user) {
           // Use setTimeout to avoid deadlock with Supabase client
-          setTimeout(() => checkRoles(session.user.id), 0);
+          setTimeout(() => {
+            checkRoles(session.user.id);
+            checkProfile(session.user.id);
+          }, 0);
         } else {
           setIsAdmin(false);
           setIsModerator(false);
+          setProfileId(null);
         }
         
         setLoading(false);
@@ -71,6 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         checkRoles(session.user.id);
+        checkProfile(session.user.id);
       }
       setLoading(false);
     });
@@ -95,7 +119,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // Importante: algunos entornos en Windows pueden no disparar el listener de forma fiable;
+    // forzamos limpieza de estado local para que la UI refleje el logout inmediatamente.
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } finally {
+      setSession(null);
+      setUser(null);
+      setIsAdmin(false);
+      setIsModerator(false);
+      setProfileId(null);
+    }
   };
 
   return (
@@ -106,6 +140,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         loading,
         isAdmin,
         isModerator,
+        profileId,
+        hasProfile: Boolean(profileId),
         signIn,
         signUp,
         signOut,

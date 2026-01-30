@@ -9,8 +9,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Clock, XCircle, AlertTriangle, ShieldCheck, ShieldOff, CreditCard, PhoneCall } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, AlertTriangle, ShieldCheck, ShieldOff, CreditCard, PhoneCall, Info } from 'lucide-react';
 import { ProfileMediaManager } from '@/components/profile/ProfileMediaManager';
+import Link from 'next/link';
 
 type ProfileRow = {
   id: string;
@@ -129,13 +130,37 @@ export default function CuentaPage() {
 
       <main className="container mx-auto px-4 py-10 max-w-3xl space-y-6">
         <div>
-          <h1 className="text-3xl font-display font-bold text-foreground">Panel anunciante</h1>
-          <p className="text-muted-foreground mt-1">Gestiona tu anuncio y tu suscripción.</p>
+          <h1 className="text-3xl font-display font-bold text-foreground">Dashboard usuario</h1>
+          <p className="text-muted-foreground mt-1">
+            Accede a tu cuenta. Si quieres anunciarte, podrás crear tu perfil desde aquí.
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-red-500/35 bg-red-500/10 p-5 gradient-border">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-red-500/15 border border-red-500/25">
+              <Info className="h-5 w-5 text-red-300" />
+            </div>
+            <div className="flex-1">
+              <div className="font-display text-lg font-semibold text-foreground">Aviso importante</div>
+          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+            <span className="font-medium text-foreground">
+              Contactalia no permite ni facilita servicios de carácter sexual.
+            </span>{' '}
+            Las funcionalidades de la plataforma no implican encuentros íntimos ni servicios sexuales a cambio de dinero.
+          </p>
+          <div className="mt-3">
+            <Button asChild variant="secondary" size="sm" className="bg-red-500/15 text-red-100 border border-red-500/25 hover:bg-red-500/20">
+              <Link href="/informacion">Leer información completa de la plataforma</Link>
+            </Button>
+          </div>
+            </div>
+          </div>
         </div>
 
         <Card className="glass-card border-border">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Tu anuncio</CardTitle>
+            <CardTitle>{profile ? 'Tu perfil de anunciante' : 'Tu cuenta'}</CardTitle>
             <Button variant="outline" size="sm" onClick={load} disabled={fetching}>
               Actualizar
             </Button>
@@ -146,9 +171,15 @@ export default function CuentaPage() {
             ) : !profile ? (
               <div className="space-y-3">
                 <p className="text-muted-foreground">
-                  Aún no has creado ningún anuncio.
+                  Actualmente eres <span className="text-foreground font-medium">visitante</span>. Si quieres anunciarte,
+                  crea tu perfil de anunciante.
                 </p>
-                <Button onClick={() => router.push('/crear-anuncio')}>Crear anuncio</Button>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button onClick={() => router.push('/crear-anuncio')}>Crear anuncio</Button>
+                  <Button variant="outline" onClick={() => router.push('/tarifas')}>
+                    Ver tarifas
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="space-y-3">

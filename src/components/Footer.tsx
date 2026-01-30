@@ -13,6 +13,7 @@ const LEGAL_LINKS = [
   { href: '/legal/privacidad', label: 'Privacidad' },
   { href: '/legal/cookies', label: 'Cookies' },
   { href: '/legal/terminos', label: 'Términos y condiciones' },
+  { href: '/informacion', label: 'Información sobre Contactalia' },
 ] as const;
 
 export function Footer() {

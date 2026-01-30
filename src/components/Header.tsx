@@ -20,11 +20,12 @@ import { useAuth } from '@/hooks/useAuth';
 
 export const Header = () => {
   const router = useRouter();
-  const { user, isAdmin, isModerator, signOut, loading } = useAuth();
+  const { user, isAdmin, isModerator, hasProfile, signOut, loading } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();
     router.push('/');
+    router.refresh();
   };
 
   const handlePublish = () => {
@@ -81,12 +82,12 @@ export const Header = () => {
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem onClick={() => router.push('/cuenta')}>
                       <User className="w-4 h-4 mr-2" />
-                      Panel anunciante
+                      {hasProfile ? 'Dashboard anunciante' : 'Dashboard usuario'}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => router.push('/crear-anuncio')}>
                       <Plus className="w-4 h-4 mr-2" />
-                      Crear anuncio
+                      {hasProfile ? 'Editar anuncio' : 'Crear anuncio'}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     {(isAdmin || isModerator) && (
@@ -151,6 +152,18 @@ export const Header = () => {
                 <hr className="border-border" />
                 {user ? (
                   <>
+                    <Link
+                      href="/cuenta"
+                      className="text-lg text-foreground hover:text-primary transition-colors"
+                    >
+                      {hasProfile ? 'Dashboard anunciante' : 'Dashboard usuario'}
+                    </Link>
+                    <Link
+                      href="/crear-anuncio"
+                      className="text-lg text-foreground hover:text-primary transition-colors"
+                    >
+                      {hasProfile ? 'Editar anuncio' : 'Crear anuncio'}
+                    </Link>
                     {(isAdmin || isModerator) && (
                       <Link 
                         href="/admin" 

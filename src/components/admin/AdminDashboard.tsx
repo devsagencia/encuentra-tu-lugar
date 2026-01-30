@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Eye, CheckCircle, Clock, XCircle, AlertTriangle } from 'lucide-react';
+import { AdminAccounting } from '@/components/admin/AdminAccounting';
 
 interface DashboardStats {
   totalProfiles: number;
@@ -144,6 +145,8 @@ export const AdminDashboard = () => {
           </p>
         </CardContent>
       </Card>
+
+      <AdminAccounting />
     </div>
   );
 };

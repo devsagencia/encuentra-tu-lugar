@@ -1,4 +1,6 @@
-import { useNavigate } from 'react-router-dom';
+'use client';
+
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,9 +10,11 @@ import {
   BarChart3,
   LogOut,
   Home,
+  UserCog,
+  CreditCard,
 } from 'lucide-react';
 
-type AdminView = 'dashboard' | 'profiles' | 'moderation' | 'stats';
+type AdminView = 'dashboard' | 'profiles' | 'moderation' | 'stats' | 'users' | 'subscriptions';
 
 interface AdminSidebarProps {
   activeView: AdminView;
@@ -24,11 +28,11 @@ export const AdminSidebar = ({
   isAdmin,
 }: AdminSidebarProps) => {
   const { signOut, user } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
+    router.push('/');
   };
 
   const menuItems = [
@@ -36,7 +40,11 @@ export const AdminSidebar = ({
     { id: 'profiles' as AdminView, label: 'Perfiles', icon: Users },
     { id: 'moderation' as AdminView, label: 'Moderación', icon: ShieldCheck },
     ...(isAdmin
-      ? [{ id: 'stats' as AdminView, label: 'Estadísticas', icon: BarChart3 }]
+      ? [
+          { id: 'stats' as AdminView, label: 'Estadísticas', icon: BarChart3 },
+          { id: 'users' as AdminView, label: 'Usuarios', icon: UserCog },
+          { id: 'subscriptions' as AdminView, label: 'Suscripciones', icon: CreditCard },
+        ]
       : []),
   ];
 
@@ -74,7 +82,7 @@ export const AdminSidebar = ({
         <Button
           variant="ghost"
           className="w-full justify-start text-muted-foreground hover:text-foreground"
-          onClick={() => navigate('/')}
+          onClick={() => router.push('/')}
         >
           <Home className="w-4 h-4 mr-3" />
           Ir al sitio

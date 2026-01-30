@@ -1,5 +1,8 @@
+'use client';
+
 import { Heart, Menu, User, Plus, Settings, LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -16,39 +19,47 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 
 export const Header = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { user, isAdmin, isModerator, signOut, loading } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
+    router.push('/');
+  };
+
+  const handlePublish = () => {
+    if (user) {
+      router.push('/crear-anuncio');
+      return;
+    }
+    router.push('/auth?next=/crear-anuncio');
   };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <Heart className="w-8 h-8 text-primary fill-primary" />
           <span className="font-display text-xl font-bold gradient-text hidden sm:inline">
-            Contactos España
+            Contactalia
           </span>
-        </a>
+        </Link>
         
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-6">
-          <a href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             Inicio
-          </a>
-          <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          </Link>
+          <Link href="/como-funciona" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             Cómo funciona
-          </a>
-          <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          </Link>
+          <Link href="/tarifas" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             Tarifas
-          </a>
-          <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          </Link>
+          <Link href="/contacto" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             Contacto
-          </a>
+          </Link>
         </nav>
         
         {/* Actions */}
@@ -68,9 +79,19 @@ export const Header = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => router.push('/cuenta')}>
+                      <User className="w-4 h-4 mr-2" />
+                      Panel anunciante
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => router.push('/crear-anuncio')}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Crear anuncio
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     {(isAdmin || isModerator) && (
                       <>
-                        <DropdownMenuItem onClick={() => navigate('/admin')}>
+                        <DropdownMenuItem onClick={() => router.push('/admin')}>
                           <Settings className="w-4 h-4 mr-2" />
                           Panel Admin
                         </DropdownMenuItem>
@@ -88,7 +109,7 @@ export const Header = () => {
                   variant="ghost" 
                   size="sm"
                   className="hidden sm:flex text-muted-foreground hover:text-foreground"
-                  onClick={() => navigate('/auth')}
+                  onClick={() => router.push('/auth')}
                 >
                   <User className="w-4 h-4 mr-2" />
                   Iniciar sesión
@@ -99,6 +120,7 @@ export const Header = () => {
           <Button 
             size="sm"
             className="bg-primary text-primary-foreground hover:bg-primary/90 glow"
+            onClick={handlePublish}
           >
             <Plus className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Publicar anuncio</span>
@@ -114,28 +136,28 @@ export const Header = () => {
             </SheetTrigger>
             <SheetContent className="bg-background border-border">
               <nav className="flex flex-col gap-4 mt-8">
-                <a href="/" className="text-lg text-foreground hover:text-primary transition-colors">
+                <Link href="/" className="text-lg text-foreground hover:text-primary transition-colors">
                   Inicio
-                </a>
-                <a href="#" className="text-lg text-foreground hover:text-primary transition-colors">
+                </Link>
+                <Link href="/como-funciona" className="text-lg text-foreground hover:text-primary transition-colors">
                   Cómo funciona
-                </a>
-                <a href="#" className="text-lg text-foreground hover:text-primary transition-colors">
+                </Link>
+                <Link href="/tarifas" className="text-lg text-foreground hover:text-primary transition-colors">
                   Tarifas
-                </a>
-                <a href="#" className="text-lg text-foreground hover:text-primary transition-colors">
+                </Link>
+                <Link href="/contacto" className="text-lg text-foreground hover:text-primary transition-colors">
                   Contacto
-                </a>
+                </Link>
                 <hr className="border-border" />
                 {user ? (
                   <>
                     {(isAdmin || isModerator) && (
-                      <a 
+                      <Link 
                         href="/admin" 
                         className="text-lg text-foreground hover:text-primary transition-colors"
                       >
                         Panel Admin
-                      </a>
+                      </Link>
                     )}
                     <button 
                       onClick={handleSignOut}
@@ -145,12 +167,12 @@ export const Header = () => {
                     </button>
                   </>
                 ) : (
-                  <a 
+                  <Link 
                     href="/auth" 
                     className="text-lg text-foreground hover:text-primary transition-colors"
                   >
                     Iniciar sesión
-                  </a>
+                  </Link>
                 )}
               </nav>
             </SheetContent>

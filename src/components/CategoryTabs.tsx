@@ -1,3 +1,5 @@
+'use client';
+
 import { categories, Category } from '@/data/mockProfiles';
 import { cn } from '@/lib/utils';
 

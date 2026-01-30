@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
@@ -8,8 +10,14 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   isModerator: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signIn: (
+    email: string,
+    password: string
+  ) => Promise<{ error: Error | null; user: User | null; session: Session | null }>;
+  signUp: (
+    email: string,
+    password: string
+  ) => Promise<{ error: Error | null; user: User | null; session: Session | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -71,19 +79,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    return { error, user: data.user ?? null, session: data.session ?? null };
   };
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: window.location.origin,
       },
     });
-    return { error };
+    return { error, user: data.user ?? null, session: data.session ?? null };
   };
 
   const signOut = async () => {

@@ -21,6 +21,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { spanishCities, activityOptions } from '@/data/mockProfiles';
 
+const PROFILE_PREFILL_SELECT =
+  'name,phone,whatsapp,city,zone,postal_code,age,languages,available_days,accompaniment_types,schedule,hair_color,height_cm,weight_kg,profession,nationality,birth_place,description,status' as const;
+
 const IDIOMAS = [
   'Español',
   'Catalán',
@@ -100,29 +103,7 @@ export default function CrearAnuncioPage() {
 
       const { data, error } = await supabase
         .from('profiles')
-        .select(
-          [
-            'name',
-            'phone',
-            'whatsapp',
-            'city',
-            'zone',
-            'postal_code',
-            'age',
-            'languages',
-            'available_days',
-            'accompaniment_types',
-            'schedule',
-            'hair_color',
-            'height_cm',
-            'weight_kg',
-            'profession',
-            'nationality',
-            'birth_place',
-            'description',
-            'status',
-          ].join(','),
-        )
+        .select(PROFILE_PREFILL_SELECT)
         .eq('user_id', user.id)
         .maybeSingle();
 

@@ -1,4 +1,25 @@
-export type Category = 'escort' | 'gay' | 'trans' | 'swinger' | 'club' | 'tienda';
+// Categoría legacy (se mantiene por compatibilidad con datos antiguos).
+// La experiencia de navegación y filtros principales se basan en "actividades / intereses" (multi-select).
+export type Category = 'social';
+
+export const activityOptions = [
+  { id: 'Amistad', label: 'Amistad', icon: '🤝' },
+  { id: 'Salidas y ocio', label: 'Salidas y ocio', icon: '🎉' },
+  { id: 'Viajes', label: 'Viajes', icon: '✈️' },
+  { id: 'Eventos', label: 'Eventos', icon: '📅' },
+  { id: 'Actividades culturales', label: 'Actividades culturales', icon: '🎭' },
+  { id: 'Acompañamiento para eventos', label: 'Acompañamiento para eventos', icon: '🥂' },
+  { id: 'Influencers / RRSS', label: 'Influencers / RRSS', icon: '📱' },
+  { id: 'Modelaje', label: 'Modelaje', icon: '👗' },
+  { id: 'Fotografía', label: 'Fotografía', icon: '📸' },
+  { id: 'Networking', label: 'Networking', icon: '🧩' },
+  { id: 'Personas afines', label: 'Personas afines', icon: '🫶' },
+  { id: 'Compartir experiencias', label: 'Compartir experiencias', icon: '✨' },
+  { id: 'Vida social', label: 'Vida social', icon: '🏙️' },
+  { id: 'Comunidad local', label: 'Comunidad local', icon: '📍' },
+] as const;
+
+export type Activity = (typeof activityOptions)[number]['id'];
 
 export interface Profile {
   id: string;
@@ -20,6 +41,7 @@ export interface Profile {
   whatsapp?: string;
   whatsappEnabled?: boolean;
   schedule?: string;
+  publicPlan?: 'free' | 'premium' | 'vip';
 
   // Campos ampliados (anuncio real)
   zone?: string;
@@ -37,32 +59,66 @@ export interface Profile {
 }
 
 export const categories: { id: Category; label: string; icon: string }[] = [
-  { id: 'escort', label: 'Escorts', icon: '💋' },
-  { id: 'gay', label: 'Gay', icon: '🌈' },
-  { id: 'trans', label: 'Trans', icon: '⚧️' },
-  { id: 'swinger', label: 'Swinger', icon: '💑' },
-  { id: 'club', label: 'Clubs', icon: '🎭' },
-  { id: 'tienda', label: 'Tiendas', icon: '🛍️' },
+  { id: 'social', label: 'Social', icon: '✨' },
 ];
 
 export const spanishCities = [
   'Todas las ciudades',
-  'Madrid',
-  'Barcelona',
-  'Valencia',
-  'Sevilla',
-  'Málaga',
-  'Bilbao',
-  'Zaragoza',
+  // Capitales de provincia (y ciudades autónomas)
+  'A Coruña',
+  'Albacete',
   'Alicante',
-  'Palma de Mallorca',
+  'Almería',
+  'Ávila',
+  'Badajoz',
+  'Barcelona',
+  'Bilbao',
+  'Burgos',
+  'Cáceres',
+  'Cádiz',
+  'Castellón de la Plana',
+  'Ceuta',
+  'Ciudad Real',
+  'Córdoba',
+  'Cuenca',
+  'Girona',
   'Granada',
+  'Guadalajara',
+  'Huelva',
+  'Huesca',
+  'Jaén',
+  'Las Palmas de Gran Canaria',
+  'León',
+  'Lleida',
+  'Logroño',
+  'Lugo',
+  'Madrid',
+  'Málaga',
+  'Melilla',
+  'Mérida',
   'Murcia',
-  'Las Palmas',
-  'Tenerife',
-  'Ibiza',
-  'Marbella',
+  'Ourense',
+  'Oviedo',
+  'Palencia',
+  'Palma',
+  'Pamplona',
+  'Pontevedra',
+  'Salamanca',
   'San Sebastián',
+  'Santa Cruz de Tenerife',
+  'Santander',
+  'Santiago de Compostela',
+  'Segovia',
+  'Sevilla',
+  'Soria',
+  'Tarragona',
+  'Teruel',
+  'Toledo',
+  'Valencia',
+  'Valladolid',
+  'Vitoria-Gasteiz',
+  'Zamora',
+  'Zaragoza',
 ];
 
 export const mockProfiles: Profile[] = [
@@ -70,9 +126,10 @@ export const mockProfiles: Profile[] = [
     id: '1',
     name: 'Valentina',
     age: 26,
-    category: 'escort',
+    category: 'social',
     city: 'Madrid',
-    description: 'Elegante y sofisticada. Servicio exclusivo de alto nivel. Me encanta conocer gente interesante y disfrutar de buenas conversaciones. Disponible para cenas, eventos y compañía de calidad.',
+    description:
+      'Me encanta conocer gente nueva y compartir planes: ocio, eventos y experiencias en la ciudad. Perfil orientado a socializar con respeto.',
     image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=500&fit=crop',
     images: [
       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=1000&fit=crop',
@@ -88,18 +145,21 @@ export const mockProfiles: Profile[] = [
     views: 3420,
     verified: true,
     premium: true,
-    tags: ['VIP', 'Disponible 24h', 'Idiomas', 'Cenas'],
+    publicPlan: 'vip',
+    tags: ['Social', 'Eventos', 'Experiencias'],
     phone: '+34 612 345 678',
     whatsapp: '+34 612 345 678',
     schedule: 'Lunes a Domingo, 10:00 - 02:00',
+    accompanimentTypes: ['Compartir experiencias', 'Salidas y ocio', 'Eventos', 'Vida social'],
   },
   {
     id: '2',
     name: 'Marcos',
     age: 32,
-    category: 'gay',
+    category: 'social',
     city: 'Barcelona',
-    description: 'Atlético y carismático. Experiencias únicas garantizadas. Persona educada y discreta para todo tipo de encuentros.',
+    description:
+      'Busco conocer personas afines para planes y actividades (ocio, cultura y viajes). Comunicación clara y respetuosa.',
     image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop',
     images: [
       'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=1000&fit=crop',
@@ -112,17 +172,20 @@ export const mockProfiles: Profile[] = [
     views: 2180,
     verified: true,
     premium: false,
-    tags: ['Deportista', 'Viajes', 'Discreto'],
+    publicPlan: 'free',
+    tags: ['Viajes', 'Cultura', 'Social'],
     phone: '+34 623 456 789',
     schedule: 'Lunes a Viernes, 18:00 - 00:00',
+    accompanimentTypes: ['Amistad', 'Viajes', 'Actividades culturales', 'Personas afines'],
   },
   {
     id: '3',
     name: 'Luna',
     age: 28,
-    category: 'trans',
+    category: 'social',
     city: 'Valencia',
-    description: 'Belleza única y personalidad encantadora. Experiencia completa y satisfacción garantizada.',
+    description:
+      'Me gusta crear comunidad y compartir experiencias. Disponible para salidas, eventos y actividades culturales.',
     image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=500&fit=crop',
     images: [
       'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800&h=1000&fit=crop',
@@ -134,17 +197,20 @@ export const mockProfiles: Profile[] = [
     views: 4560,
     verified: true,
     premium: true,
-    tags: ['Premium', 'Bilingüe', 'Hotel'],
+    publicPlan: 'premium',
+    tags: ['Comunidad', 'Eventos', 'Social'],
     whatsapp: '+34 634 567 890',
     schedule: 'Todos los días, 12:00 - 04:00',
+    accompanimentTypes: ['Comunidad local', 'Eventos', 'Compartir experiencias'],
   },
   {
     id: '4',
     name: 'Club Paraíso',
     age: 0,
-    category: 'club',
+    category: 'social',
     city: 'Ibiza',
-    description: 'El club más exclusivo de la isla. Noches inolvidables con el mejor ambiente y la mejor música.',
+    description:
+      'Espacio social para eventos y comunidad local. Actividades para conocer gente y compartir intereses.',
     image: 'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=400&h=500&fit=crop',
     images: [
       'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=800&h=1000&fit=crop',
@@ -159,17 +225,20 @@ export const mockProfiles: Profile[] = [
     views: 8900,
     verified: true,
     premium: true,
-    tags: ['VIP Area', 'Eventos', 'Reservas'],
+    publicPlan: 'vip',
+    tags: ['Eventos', 'Comunidad', 'Social'],
     phone: '+34 971 123 456',
     schedule: 'Jueves a Domingo, 23:00 - 06:00',
+    accompanimentTypes: ['Eventos', 'Vida social', 'Comunidad local'],
   },
   {
     id: '5',
     name: 'Pareja Liberal',
     age: 35,
-    category: 'swinger',
+    category: 'social',
     city: 'Marbella',
-    description: 'Pareja joven buscando nuevas experiencias. Discretos y respetuosos.',
+    description:
+      'Pareja buscando ampliar círculo social y compartir experiencias (viajes, ocio, eventos). Siempre con respeto.',
     image: 'https://images.unsplash.com/photo-1516589091380-5d8e87df6999?w=400&h=500&fit=crop',
     images: [
       'https://images.unsplash.com/photo-1516589091380-5d8e87df6999?w=800&h=1000&fit=crop',
@@ -180,16 +249,19 @@ export const mockProfiles: Profile[] = [
     views: 1890,
     verified: false,
     premium: false,
-    tags: ['Pareja', 'Discretos', 'Fiestas'],
+    publicPlan: 'free',
+    tags: ['Pareja', 'Ocio', 'Viajes'],
     whatsapp: '+34 645 678 901',
+    accompanimentTypes: ['Compartir experiencias', 'Salidas y ocio', 'Viajes', 'Eventos'],
   },
   {
     id: '6',
     name: 'Sensaciones Shop',
     age: 0,
-    category: 'tienda',
+    category: 'social',
     city: 'Madrid',
-    description: 'Tu tienda erótica de confianza. Envío discreto 24h. Gran variedad de productos.',
+    description:
+      'Comunidad local y vida social: espacios y actividades para conocer gente y compartir intereses.',
     image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=500&fit=crop',
     images: [
       'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=1000&fit=crop',
@@ -201,17 +273,20 @@ export const mockProfiles: Profile[] = [
     views: 12400,
     verified: true,
     premium: true,
-    tags: ['Envío gratis', '24h', 'Online'],
+    publicPlan: 'premium',
+    tags: ['Comunidad', 'Local', 'Social'],
     phone: '+34 910 234 567',
     schedule: 'Lunes a Sábado, 10:00 - 21:00',
+    accompanimentTypes: ['Comunidad local', 'Personas afines', 'Vida social'],
   },
   {
     id: '7',
     name: 'Adriana',
     age: 24,
-    category: 'escort',
+    category: 'social',
     city: 'Sevilla',
-    description: 'Joven y apasionada. Trato cercano y natural.',
+    description:
+      'Me gusta conocer gente y compartir planes de ocio y eventos. Perfil orientado a amistad y experiencias.',
     image: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=500&fit=crop',
     images: [
       'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&h=1000&fit=crop',
@@ -223,17 +298,20 @@ export const mockProfiles: Profile[] = [
     views: 2340,
     verified: true,
     premium: false,
-    tags: ['Nueva', 'Fotos reales', 'Domicilio'],
+    publicPlan: 'free',
+    tags: ['Amistad', 'Eventos', 'Ocio'],
     phone: '+34 656 789 012',
     schedule: 'Lunes a Viernes, 16:00 - 00:00',
+    accompanimentTypes: ['Amistad', 'Salidas y ocio', 'Eventos', 'Vida social'],
   },
   {
     id: '8',
     name: 'Daniel',
     age: 29,
-    category: 'gay',
+    category: 'social',
     city: 'Madrid',
-    description: 'Profesional discreto. Máxima confidencialidad garantizada.',
+    description:
+      'Interesado en networking, vida social y planes culturales. Comunicación respetuosa y transparente.',
     image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=500&fit=crop',
     images: [
       'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&h=1000&fit=crop',
@@ -245,8 +323,10 @@ export const mockProfiles: Profile[] = [
     views: 5670,
     verified: true,
     premium: true,
-    tags: ['Ejecutivo', 'Hotel', 'Viajes'],
+    publicPlan: 'vip',
+    tags: ['Networking', 'Cultura', 'Viajes'],
     whatsapp: '+34 667 890 123',
     schedule: 'Disponibilidad flexible',
+    accompanimentTypes: ['Networking', 'Actividades culturales', 'Viajes', 'Personas afines'],
   },
 ];

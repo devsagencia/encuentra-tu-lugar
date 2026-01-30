@@ -103,6 +103,7 @@ export type Database = {
           phone_verified_at: string | null
           phone_verified_by: string | null
           postal_code: string | null
+          public_plan: string
           premium: boolean | null
           profession: string | null
           rating: number | null
@@ -139,6 +140,7 @@ export type Database = {
           phone_verified_at?: string | null
           phone_verified_by?: string | null
           postal_code?: string | null
+          public_plan?: string
           premium?: boolean | null
           profession?: string | null
           rating?: number | null
@@ -175,6 +177,7 @@ export type Database = {
           phone_verified_at?: string | null
           phone_verified_by?: string | null
           postal_code?: string | null
+          public_plan?: string
           premium?: boolean | null
           profession?: string | null
           rating?: number | null

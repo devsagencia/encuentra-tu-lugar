@@ -18,7 +18,7 @@ import {
   ShieldOff,
   Hash,
 } from 'lucide-react';
-import { Profile, categories } from '@/data/mockProfiles';
+import { Profile, activityOptions } from '@/data/mockProfiles';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -28,7 +28,10 @@ interface ProfileInfoProps {
 }
 
 export const ProfileInfo = ({ profile }: ProfileInfoProps) => {
-  const category = categories.find(c => c.id === profile.category);
+  const activities = profile.accompanimentTypes ?? [];
+  const primaryActivity = activities[0];
+  const activity = primaryActivity ? activityOptions.find((a) => a.id === primaryActivity) : null;
+  const activitySuffix = activities.length > 1 ? ` +${activities.length - 1}` : '';
 
   return (
     <div className="space-y-6">
@@ -41,11 +44,13 @@ export const ProfileInfo = ({ profile }: ProfileInfoProps) => {
               <span className="text-sm font-semibold text-primary">Premium</span>
             </div>
           )}
-          <div className="px-3 py-1.5 rounded-full bg-secondary/20 border border-secondary/30">
-            <span className="text-sm font-medium text-secondary-foreground">
-              {category?.icon} {category?.label}
-            </span>
-          </div>
+          {activity || primaryActivity ? (
+            <div className="px-3 py-1.5 rounded-full bg-secondary/20 border border-secondary/30">
+              <span className="text-sm font-medium text-secondary-foreground">
+                {activity ? `${activity.icon} ${activity.label}${activitySuffix}` : `✨ ${primaryActivity}${activitySuffix}`}
+              </span>
+            </div>
+          ) : null}
           {profile.phoneVerified ? (
             <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-green-500/15 border border-green-500/30">
               <ShieldCheck className="w-4 h-4 text-green-400" />

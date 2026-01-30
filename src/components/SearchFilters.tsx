@@ -3,21 +3,16 @@
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { categories, spanishCities, Category } from '@/data/mockProfiles';
+import { activityOptions, spanishCities, type Activity } from '@/data/mockProfiles';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface SearchFiltersProps {
   keyword: string;
   setKeyword: (value: string) => void;
-  category: Category | 'all';
-  setCategory: (value: Category | 'all') => void;
+  activities: Activity[];
+  setActivities: (value: Activity[]) => void;
   city: string;
   setCity: (value: string) => void;
   ageRange: [number, number];
@@ -28,8 +23,8 @@ interface SearchFiltersProps {
 export const SearchFilters = ({
   keyword,
   setKeyword,
-  category,
-  setCategory,
+  activities,
+  setActivities,
   city,
   setCity,
   ageRange,
@@ -58,24 +53,29 @@ export const SearchFilters = ({
         </div>
       </div>
       
-      {/* Category */}
+      {/* Actividades / intereses */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-muted-foreground">
-          Categoría
+          Actividades / intereses
         </label>
-        <Select value={category} onValueChange={(v) => setCategory(v as Category | 'all')}>
-          <SelectTrigger className="bg-input border-border">
-            <SelectValue placeholder="Todas las categorías" />
-          </SelectTrigger>
-          <SelectContent className="bg-popover border-border">
-            <SelectItem value="all">Todas las categorías</SelectItem>
-            {categories.map((cat) => (
-              <SelectItem key={cat.id} value={cat.id}>
-                {cat.icon} {cat.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {activityOptions.map((a) => (
+            <label key={a.id} className="flex items-center gap-2 text-sm text-foreground">
+              <Checkbox
+                checked={activities.includes(a.id)}
+                onCheckedChange={() =>
+                  setActivities(
+                    activities.includes(a.id)
+                      ? (activities.filter((x) => x !== a.id) as Activity[])
+                      : ([...activities, a.id] as Activity[])
+                  )
+                }
+              />
+              <span className="text-muted-foreground">{a.icon}</span>
+              {a.label}
+            </label>
+          ))}
+        </div>
       </div>
       
       {/* City */}

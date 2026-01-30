@@ -11,7 +11,7 @@ import {
 import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell } from 'recharts';
 
 interface CategoryStats {
-  category: string;
+  activity: string;
   count: number;
 }
 
@@ -21,7 +21,7 @@ interface CityStats {
 }
 
 export const AdminStats = () => {
-  const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([]);
+  const [activityStats, setActivityStats] = useState<CategoryStats[]>([]);
   const [cityStats, setCityStats] = useState<CityStats[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,24 +30,29 @@ export const AdminStats = () => {
       try {
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('category, city, status')
+          .select('accompaniment_types, city, status')
           .eq('status', 'approved');
 
         if (profiles) {
-          // Category stats
-          const categoryCount: Record<string, number> = {};
+          // Activity stats (multi-select)
+          const activityCount: Record<string, number> = {};
           const cityCount: Record<string, number> = {};
 
           profiles.forEach((profile) => {
-            categoryCount[profile.category] =
-              (categoryCount[profile.category] || 0) + 1;
+            const acts = (profile as any).accompaniment_types as string[] | null;
+            if (acts?.length) {
+              acts.forEach((a) => {
+                activityCount[a] = (activityCount[a] || 0) + 1;
+              });
+            }
             cityCount[profile.city] = (cityCount[profile.city] || 0) + 1;
           });
 
-          setCategoryStats(
-            Object.entries(categoryCount)
-              .map(([category, count]) => ({ category, count }))
+          setActivityStats(
+            Object.entries(activityCount)
+              .map(([activity, count]) => ({ activity, count }))
               .sort((a, b) => b.count - a.count)
+              .slice(0, 12)
           );
 
           setCityStats(
@@ -77,12 +82,7 @@ export const AdminStats = () => {
   ];
 
   const categoryLabels: Record<string, string> = {
-    escort: 'Escorts',
-    gay: 'Gay',
-    trans: 'Trans',
-    swinger: 'Swinger',
-    club: 'Clubs',
-    tienda: 'Tiendas',
+    // mantenemos por compatibilidad; en la nueva taxonomía usamos directamente el texto
   };
 
   const chartConfig = {
@@ -107,14 +107,14 @@ export const AdminStats = () => {
         {/* Category Distribution */}
         <Card className="glass-card border-border">
           <CardHeader>
-            <CardTitle>Distribución por Categoría</CardTitle>
+            <CardTitle>Distribución por Actividades</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
               <p className="text-center text-muted-foreground py-8">
                 Cargando...
               </p>
-            ) : categoryStats.length === 0 ? (
+            ) : activityStats.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
                 Sin datos disponibles
               </p>
@@ -122,18 +122,18 @@ export const AdminStats = () => {
               <ChartContainer config={chartConfig} className="h-[300px]">
                 <PieChart>
                   <Pie
-                    data={categoryStats}
+                    data={activityStats}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ category, percent }) =>
-                      `${categoryLabels[category] || category} (${(percent * 100).toFixed(0)}%)`
+                    label={({ activity, percent }) =>
+                      `${categoryLabels[activity] || activity} (${(percent * 100).toFixed(0)}%)`
                     }
                     outerRadius={100}
                     fill="#8884d8"
                     dataKey="count"
                   >
-                    {categoryStats.map((_, index) => (
+                    {activityStats.map((_, index) => (
                       <Cell
                         key={`cell-${index}`}
                         fill={COLORS[index % COLORS.length]}
@@ -190,11 +190,11 @@ export const AdminStats = () => {
         <Card className="glass-card border-border">
           <CardHeader>
             <CardTitle className="text-sm text-muted-foreground">
-              Total Categorías
+              Total Actividades (top)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{categoryStats.length}</p>
+            <p className="text-3xl font-bold">{activityStats.length}</p>
           </CardContent>
         </Card>
         <Card className="glass-card border-border">
@@ -215,7 +215,7 @@ export const AdminStats = () => {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">
-              {categoryStats.reduce((acc, cat) => acc + cat.count, 0)}
+              {cityStats.reduce((acc, c) => acc + c.count, 0)}
             </p>
           </CardContent>
         </Card>

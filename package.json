@@ -3,9 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "set \"NEXT_DISABLE_TURBOPACK=1\" && \"%npm_node_execpath%\" node_modules/next/dist/bin/next dev",
-    "build": "\"%npm_node_execpath%\" node_modules/next/dist/bin/next build",
-    "start": "\"%npm_node_execpath%\" node_modules/next/dist/bin/next start",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "dev:win": "\"%npm_node_execpath%\" node_modules/next/dist/bin/next dev",
+    "build:win": "\"%npm_node_execpath%\" node_modules/next/dist/bin/next build",
+    "start:win": "\"%npm_node_execpath%\" node_modules/next/dist/bin/next start",
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest"

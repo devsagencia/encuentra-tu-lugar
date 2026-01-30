@@ -1,33 +1,36 @@
+'use client';
+
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { AdminProfiles } from '@/components/admin/AdminProfiles';
 import { AdminModeration } from '@/components/admin/AdminModeration';
 import { AdminStats } from '@/components/admin/AdminStats';
+import { AdminUsers } from '@/components/admin/AdminUsers';
+import { AdminSubscriptions } from '@/components/admin/AdminSubscriptions';
 import { Loader2 } from 'lucide-react';
 
-type AdminView = 'dashboard' | 'profiles' | 'moderation' | 'stats';
+type AdminView = 'dashboard' | 'profiles' | 'moderation' | 'stats' | 'users' | 'subscriptions';
 
-const Admin = () => {
+export default function AdminPage() {
   const { user, loading, isAdmin, isModerator } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [activeView, setActiveView] = useState<AdminView>('dashboard');
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/auth');
+      router.push('/auth');
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, router]);
 
   useEffect(() => {
     if (!loading && user && !isAdmin && !isModerator) {
       // User doesn't have admin/moderator role - redirect
-      navigate('/');
+      router.push('/');
     }
-  }, [user, loading, isAdmin, isModerator, navigate]);
+  }, [user, loading, isAdmin, isModerator, router]);
 
   if (loading) {
     return (
@@ -50,7 +53,11 @@ const Admin = () => {
       case 'moderation':
         return <AdminModeration />;
       case 'stats':
-        return <AdminStats />;
+        return isAdmin ? <AdminStats /> : <AdminDashboard />;
+      case 'users':
+        return isAdmin ? <AdminUsers /> : <AdminDashboard />;
+      case 'subscriptions':
+        return isAdmin ? <AdminSubscriptions /> : <AdminDashboard />;
       default:
         return <AdminDashboard />;
     }
@@ -68,6 +75,4 @@ const Admin = () => {
       </main>
     </div>
   );
-};
-
-export default Admin;
+}

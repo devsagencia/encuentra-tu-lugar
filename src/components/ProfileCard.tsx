@@ -1,5 +1,7 @@
+'use client';
+
 import { Star, Eye, BadgeCheck, Crown } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { Profile, categories } from '@/data/mockProfiles';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,11 +11,11 @@ interface ProfileCardProps {
 }
 
 export const ProfileCard = ({ profile }: ProfileCardProps) => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const category = categories.find(c => c.id === profile.category);
   
   const handleViewProfile = () => {
-    navigate(`/perfil/${profile.id}`);
+    router.push(`/perfil/${profile.id}`);
   };
   
   return (

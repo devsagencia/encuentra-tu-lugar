@@ -1,20 +1,25 @@
-import { useState, useMemo } from 'react';
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
 import { CategoryTabs } from '@/components/CategoryTabs';
 import { SearchFilters } from '@/components/SearchFilters';
 import { ProfileCard } from '@/components/ProfileCard';
-import { mockProfiles, Category } from '@/data/mockProfiles';
+import { mockProfiles, Category, Profile } from '@/data/mockProfiles';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { supabase } from '@/integrations/supabase/client';
+import { toProfileCardModel } from '@/lib/profileAdapters';
 
-const Index = () => {
+export default function HomePage() {
   const [keyword, setKeyword] = useState('');
   const [category, setCategory] = useState<Category | 'all'>('all');
   const [city, setCity] = useState('Todas las ciudades');
   const [ageRange, setAgeRange] = useState<[number, number]>([18, 60]);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [dbProfiles, setDbProfiles] = useState<Profile[]>([]);
 
   const clearFilters = () => {
     setKeyword('');
@@ -23,8 +28,72 @@ const Index = () => {
     setAgeRange([18, 60]);
   };
 
+  useEffect(() => {
+    const load = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(
+          `
+          id,
+          name,
+          age,
+          category,
+          city,
+          description,
+          image_url,
+          rating,
+          reviews_count,
+          views_count,
+          verified,
+          premium,
+          tags,
+          phone,
+          whatsapp,
+          schedule,
+          profile_media (
+            id,
+            media_type,
+            visibility,
+            public_url,
+            storage_path,
+            position
+          )
+        `
+        )
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        // Silencioso: si falla, seguimos mostrando demos
+        console.error('Error loading public profiles:', error);
+        return;
+      }
+
+      const mapped = (data ?? []).map((row: any) =>
+        toProfileCardModel(row, row.profile_media ?? [])
+      );
+
+      setDbProfiles(mapped);
+    };
+
+    load();
+  }, []);
+
+  const allProfiles = useMemo(() => {
+    // Mostrar primero reales, luego demos
+    const seen = new Set<string>();
+    const merged: Profile[] = [];
+    for (const p of [...dbProfiles, ...mockProfiles]) {
+      if (seen.has(p.id)) continue;
+      seen.add(p.id);
+      merged.push(p);
+    }
+    return merged;
+  }, [dbProfiles]);
+
   const filteredProfiles = useMemo(() => {
-    return mockProfiles.filter((profile) => {
+    return allProfiles.filter((profile) => {
       // Keyword filter
       if (keyword) {
         const searchTerm = keyword.toLowerCase();
@@ -48,7 +117,7 @@ const Index = () => {
 
       return true;
     });
-  }, [keyword, category, city, ageRange]);
+  }, [allProfiles, keyword, category, city, ageRange]);
 
   const filterContent = (
     <SearchFilters
@@ -138,16 +207,6 @@ const Index = () => {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-border/40 py-8">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© 2026 Contactos España. Todos los derechos reservados.</p>
-          <p className="mt-2">Solo para mayores de 18 años.</p>
-        </div>
-      </footer>
     </div>
   );
-};
-
-export default Index;
+}

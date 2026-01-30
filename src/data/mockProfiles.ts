@@ -18,7 +18,22 @@ export interface Profile {
   tags: string[];
   phone?: string;
   whatsapp?: string;
+  whatsappEnabled?: boolean;
   schedule?: string;
+
+  // Campos ampliados (anuncio real)
+  zone?: string;
+  postalCode?: string;
+  languages?: string[];
+  availableDays?: string[];
+  accompanimentTypes?: string[];
+  hairColor?: string;
+  heightCm?: number;
+  weightKg?: number;
+  profession?: string;
+  nationality?: string;
+  birthPlace?: string;
+  phoneVerified?: boolean;
 }
 
 export const categories: { id: Category; label: string; icon: string }[] = [

@@ -123,8 +123,8 @@ function PlanCard({
   icon: any;
   highlight?: boolean;
   badge?: string;
-  features: string[];
-  onSelect: (id: PlanId) => void;
+  features: readonly string[];
+  onSelect: (id: PlanId) => void | Promise<void>;
   loading: boolean;
 }) {
   return (

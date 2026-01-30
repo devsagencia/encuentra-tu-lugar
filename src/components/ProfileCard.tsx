@@ -2,7 +2,7 @@
 
 import { Star, Eye, BadgeCheck, Crown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Profile, categories } from '@/data/mockProfiles';
+import { Profile, activityOptions } from '@/data/mockProfiles';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
@@ -12,7 +12,11 @@ interface ProfileCardProps {
 
 export const ProfileCard = ({ profile }: ProfileCardProps) => {
   const router = useRouter();
-  const category = categories.find(c => c.id === profile.category);
+  const activities = profile.accompanimentTypes ?? [];
+  const primaryActivity = activities[0];
+  const activity = primaryActivity ? activityOptions.find((a) => a.id === primaryActivity) : null;
+  const activitySuffix = activities.length > 1 ? ` +${activities.length - 1}` : '';
+  const plan = (profile.publicPlan || (profile.premium ? 'premium' : 'free')) as 'free' | 'premium' | 'vip';
   
   const handleViewProfile = () => {
     router.push(`/perfil/${profile.id}`);
@@ -31,21 +35,6 @@ export const ProfileCard = ({ profile }: ProfileCardProps) => {
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
         
-        {/* Premium Badge */}
-        {profile.premium && (
-          <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-full bg-primary/90 backdrop-blur-sm">
-            <Crown className="w-3 h-3 text-primary-foreground" />
-            <span className="text-xs font-semibold text-primary-foreground">Premium</span>
-          </div>
-        )}
-        
-        {/* Category Badge */}
-        <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-secondary/90 backdrop-blur-sm">
-          <span className="text-xs font-medium text-secondary-foreground">
-            {category?.icon} {category?.label}
-          </span>
-        </div>
-        
         {/* Views Counter */}
         <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-background/80 backdrop-blur-sm">
           <Eye className="w-3 h-3 text-muted-foreground" />
@@ -55,6 +44,30 @@ export const ProfileCard = ({ profile }: ProfileCardProps) => {
       
       {/* Content */}
       <div className="p-4 space-y-3">
+        {/* Badges (fuera de la imagen) */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="outline" className="border-border/50 text-foreground">
+            {activity ? (
+              <>
+                <span className="text-muted-foreground">{activity.icon}</span> {activity.label}{activitySuffix}
+              </>
+            ) : primaryActivity ? (
+              <>✨ {primaryActivity}{activitySuffix}</>
+            ) : (
+              <>✨ Social</>
+            )}
+          </Badge>
+
+          {plan === 'vip' ? (
+            <Badge className="bg-purple-500/15 text-purple-300 border-purple-500/30">👑 VIP</Badge>
+          ) : plan === 'premium' ? (
+            <Badge className="bg-primary/15 text-primary border-primary/30">
+              <Crown className="w-3 h-3 mr-1" />
+              Premium
+            </Badge>
+          ) : null}
+        </div>
+
         {/* Name & Verified */}
         <div className="flex items-center gap-2">
           <h3 className="font-display text-xl font-semibold text-foreground">

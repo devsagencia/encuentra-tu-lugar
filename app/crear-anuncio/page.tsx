@@ -19,7 +19,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { spanishCities } from '@/data/mockProfiles';
+import { spanishCities, activityOptions } from '@/data/mockProfiles';
 
 const IDIOMAS = [
   'Español',
@@ -41,29 +41,6 @@ const DIAS = [
   'Viernes',
   'Sábado',
   'Domingo',
-] as const;
-
-const TIPOS_ACOMPANAMIENTO = [
-  'Compañía',
-  'Amistad',
-  'Eventos sociales',
-  'Viajes',
-  'Salidas recreativas',
-  'Acompañamiento profesional',
-  'Networking',
-  'Modelaje',
-  'Sesiones fotográficas',
-  'Imagen publicitaria',
-  'Creación de contenido',
-  'Colaboraciones digitales',
-  'Streaming',
-  'Videollamadas',
-  'Influencer / RRSS',
-  'Ferias y congresos',
-  'Azafata de eventos',
-  'Lifestyle',
-  'Moda',
-  'Fitness & wellness',
 ] as const;
 
 export default function CrearAnuncioPage() {
@@ -438,18 +415,19 @@ export default function CrearAnuncioPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Tipo de acompañamiento</Label>
+                    <Label>Actividades / intereses</Label>
                     <p className="text-xs text-muted-foreground">
                       Selecciona una o varias opciones (se mostrarán en tu anuncio).
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {TIPOS_ACOMPANAMIENTO.map((t) => (
-                        <label key={t} className="flex items-center gap-2 text-sm text-foreground">
+                      {activityOptions.map((t) => (
+                        <label key={t.id} className="flex items-center gap-2 text-sm text-foreground">
                           <Checkbox
-                            checked={accompanimentTypes.includes(t)}
-                            onCheckedChange={() => setAccompanimentTypes((prev) => toggleInArray(prev, t))}
+                            checked={accompanimentTypes.includes(t.id)}
+                            onCheckedChange={() => setAccompanimentTypes((prev) => toggleInArray(prev, t.id))}
                           />
-                          {t}
+                          <span className="text-muted-foreground">{t.icon}</span>
+                          {t.label}
                         </label>
                       ))}
                     </div>

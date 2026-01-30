@@ -6,7 +6,7 @@ import { Hero } from '@/components/Hero';
 import { CategoryTabs } from '@/components/CategoryTabs';
 import { SearchFilters } from '@/components/SearchFilters';
 import { ProfileCard } from '@/components/ProfileCard';
-import { mockProfiles, Category, Profile } from '@/data/mockProfiles';
+import { type Activity, Profile } from '@/data/mockProfiles';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -15,15 +15,20 @@ import { toProfileCardModel } from '@/lib/profileAdapters';
 
 export default function HomePage() {
   const [keyword, setKeyword] = useState('');
-  const [category, setCategory] = useState<Category | 'all'>('all');
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [city, setCity] = useState('Todas las ciudades');
   const [ageRange, setAgeRange] = useState<[number, number]>([18, 60]);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [dbProfiles, setDbProfiles] = useState<Profile[]>([]);
+  const [heroStats, setHeroStats] = useState<{ activeProfiles: number; cities: number; satisfactionPercent: number }>({
+    activeProfiles: 0,
+    cities: 0,
+    satisfactionPercent: 0,
+  });
 
   const clearFilters = () => {
     setKeyword('');
-    setCategory('all');
+    setActivities([]);
     setCity('Todas las ciudades');
     setAgeRange([18, 60]);
   };
@@ -46,10 +51,12 @@ export default function HomePage() {
           views_count,
           verified,
           premium,
+          public_plan,
           tags,
           phone,
           whatsapp,
           schedule,
+          accompaniment_types,
           profile_media (
             id,
             media_type,
@@ -65,8 +72,9 @@ export default function HomePage() {
         .limit(50);
 
       if (error) {
-        // Silencioso: si falla, seguimos mostrando demos
+        // Silencioso: si falla, evitamos romper la UI
         console.error('Error loading public profiles:', error);
+        setDbProfiles([]);
         return;
       }
 
@@ -75,22 +83,32 @@ export default function HomePage() {
       );
 
       setDbProfiles(mapped);
+
+      // Stats reales para el Hero (basadas en perfiles aprobados cargados)
+      const activeProfiles = mapped.length;
+      const citySet = new Set<string>();
+      let ratingSum = 0;
+      let ratingCount = 0;
+      for (const p of mapped) {
+        if (p.city) citySet.add(p.city);
+        if (typeof p.rating === 'number' && p.rating > 0) {
+          ratingSum += p.rating;
+          ratingCount += 1;
+        }
+      }
+      const avgRating = ratingCount ? ratingSum / ratingCount : 0;
+      const satisfactionPercent = avgRating ? (avgRating / 5) * 100 : 0;
+      setHeroStats({
+        activeProfiles,
+        cities: citySet.size,
+        satisfactionPercent,
+      });
     };
 
     load();
   }, []);
 
-  const allProfiles = useMemo(() => {
-    // Mostrar primero reales, luego demos
-    const seen = new Set<string>();
-    const merged: Profile[] = [];
-    for (const p of [...dbProfiles, ...mockProfiles]) {
-      if (seen.has(p.id)) continue;
-      seen.add(p.id);
-      merged.push(p);
-    }
-    return merged;
-  }, [dbProfiles]);
+  const allProfiles = useMemo(() => dbProfiles, [dbProfiles]);
 
   const filteredProfiles = useMemo(() => {
     return allProfiles.filter((profile) => {
@@ -104,8 +122,13 @@ export default function HomePage() {
         if (!matchesKeyword) return false;
       }
 
-      // Category filter
-      if (category !== 'all' && profile.category !== category) return false;
+      // Actividades / intereses (multi-select): si hay filtros, debe coincidir al menos uno
+      if (activities.length) {
+        const selected = new Set(activities);
+        const profileActs = profile.accompanimentTypes ?? [];
+        const matches = profileActs.some((a) => selected.has(a as Activity));
+        if (!matches) return false;
+      }
 
       // City filter
       if (city !== 'Todas las ciudades' && profile.city !== city) return false;
@@ -117,14 +140,14 @@ export default function HomePage() {
 
       return true;
     });
-  }, [allProfiles, keyword, category, city, ageRange]);
+  }, [allProfiles, keyword, activities, city, ageRange]);
 
   const filterContent = (
     <SearchFilters
       keyword={keyword}
       setKeyword={setKeyword}
-      category={category}
-      setCategory={setCategory}
+      activities={activities}
+      setActivities={setActivities}
       city={city}
       setCity={setCity}
       ageRange={ageRange}
@@ -136,12 +159,12 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       <Header />
-      <Hero />
+      <Hero stats={heroStats} />
 
       <main className="container mx-auto px-4 pb-16">
         {/* Category Tabs */}
         <div className="mb-8">
-          <CategoryTabs activeCategory={category} onCategoryChange={setCategory} />
+          <CategoryTabs selected={activities} onToggle={(a) => setActivities((prev) => (prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]))} onClear={() => setActivities([])} />
         </div>
 
         {/* Mobile Filter Button */}

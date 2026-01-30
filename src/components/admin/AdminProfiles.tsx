@@ -43,6 +43,7 @@ interface Profile {
   user_id: string;
   name: string;
   category: string;
+  accompaniment_types?: string[] | null;
   city: string;
   zone?: string | null;
   image_url?: string | null;
@@ -75,7 +76,7 @@ export const AdminProfiles = () => {
     try {
       let query = supabase
         .from('profiles')
-        .select('id,user_id,name,category,city,zone,image_url,status,verified,phone_verified,phone,premium,views_count,created_at')
+        .select('id,user_id,name,category,accompaniment_types,city,zone,image_url,status,verified,phone_verified,phone,premium,views_count,created_at')
         .order('created_at', { ascending: false });
 
       if (statusFilter !== 'all') {
@@ -289,6 +290,12 @@ export const AdminProfiles = () => {
     profile.category.toLowerCase().includes(search.toLowerCase())
   );
 
+  const activityLabel = (p: Profile) => {
+    const acts = (p.accompaniment_types ?? []) as string[];
+    if (!acts.length) return '—';
+    return acts.length > 1 ? `${acts[0]} +${acts.length - 1}` : acts[0];
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -349,7 +356,7 @@ export const AdminProfiles = () => {
                 <TableRow>
                   <TableHead>Foto</TableHead>
                   <TableHead>Nombre</TableHead>
-                  <TableHead>Categoría</TableHead>
+                  <TableHead>Actividad</TableHead>
                   <TableHead>Ciudad</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Plan</TableHead>
@@ -376,7 +383,9 @@ export const AdminProfiles = () => {
                         {profile.zone ? profile.zone : '—'}
                       </div>
                     </TableCell>
-                    <TableCell className="capitalize">{profile.category}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {activityLabel(profile)}
+                    </TableCell>
                     <TableCell>{profile.city}</TableCell>
                     <TableCell>{getStatusBadge(profile.status)}</TableCell>
                     <TableCell>{getPlanBadge(profile)}</TableCell>

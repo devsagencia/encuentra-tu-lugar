@@ -51,6 +51,7 @@ export default function ProfilePage() {
           verified,
           phone_verified,
           premium,
+          public_plan,
           tags,
           phone,
           whatsapp,

@@ -24,6 +24,7 @@ type DbProfileRow = {
   views_count: number | null;
   verified: boolean | null;
   phone_verified?: boolean | null;
+  public_plan?: string | null;
   premium: boolean | null;
   tags: string[] | null;
   phone: string | null;
@@ -39,11 +40,10 @@ type DbMediaRow = {
   position: number;
 };
 
-const KNOWN_CATEGORIES: Category[] = ['escort', 'gay', 'trans', 'swinger', 'club', 'tienda'];
-
-export function toCategory(value: string | null | undefined): Category {
-  const v = (value || '').toLowerCase();
-  return (KNOWN_CATEGORIES as string[]).includes(v) ? (v as Category) : 'escort';
+// El campo `profiles.category` se mantiene por compatibilidad con datos antiguos,
+// pero la plataforma ya no usa categorías explícitas. Normalizamos a 'social'.
+export function toCategory(_value: string | null | undefined): Category {
+  return 'social';
 }
 
 export function mediaPublicUrl(bucket: string, storagePath: string): string {
@@ -81,6 +81,9 @@ export function toProfileCardModel(profile: DbProfileRow, media: DbMediaRow[] = 
     views: Number(profile.views_count ?? 0),
     verified: Boolean(profile.verified),
     premium: Boolean(profile.premium),
+    publicPlan:
+      (profile.public_plan as 'free' | 'premium' | 'vip' | null | undefined) ??
+      (profile.premium ? 'premium' : 'free'),
     tags: profile.tags ?? [],
     phone: profile.phone ?? undefined,
     whatsapp: profile.whatsapp ? (profile.phone ?? undefined) : undefined,

@@ -103,6 +103,8 @@ export type Database = {
           phone_verified_at: string | null
           phone_verified_by: string | null
           postal_code: string | null
+          private_images_count: number
+          private_videos_count: number
           public_plan: string
           premium: boolean | null
           profession: string | null
@@ -140,6 +142,8 @@ export type Database = {
           phone_verified_at?: string | null
           phone_verified_by?: string | null
           postal_code?: string | null
+          private_images_count?: number
+          private_videos_count?: number
           public_plan?: string
           premium?: boolean | null
           profession?: string | null
@@ -177,6 +181,8 @@ export type Database = {
           phone_verified_at?: string | null
           phone_verified_by?: string | null
           postal_code?: string | null
+          private_images_count?: number
+          private_videos_count?: number
           public_plan?: string
           premium?: boolean | null
           profession?: string | null
@@ -298,6 +304,68 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      contact_submissions: {
+        Row: {
+          id: string
+          created_at: string
+          name: string
+          email: string
+          subject: string | null
+          message: string
+          user_id: string | null
+          status: string
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          name: string
+          email: string
+          subject?: string | null
+          message: string
+          user_id?: string | null
+          status?: string
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          name?: string
+          email?: string
+          subject?: string | null
+          message?: string
+          user_id?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      favorites: {
+        Row: {
+          id: string
+          user_id: string
+          profile_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          profile_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          profile_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

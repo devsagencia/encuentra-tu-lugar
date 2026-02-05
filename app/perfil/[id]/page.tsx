@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { ProfileGallery } from '@/components/profile/ProfileGallery';
@@ -10,65 +11,160 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toProfileCardModel } from '@/lib/profileAdapters';
 import { useAuth } from '@/hooks/useAuth';
+import { useFavorites } from '@/hooks/useFavorites';
+import { Heart } from 'lucide-react';
 
 export default function ProfilePage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
   const { user, loading } = useAuth();
+  const { isFavorite, toggle, canAdd, limit, togglingId } = useFavorites();
   const [profile, setProfile] = useState<any>(null);
   const [fetching, setFetching] = useState(true);
-  
+  const viewRecordedRef = useRef(false);
+  const fav = profile ? isFavorite(profile.id) : false;
+  const canFavorite = user && (fav || (canAdd && limit > 0));
+  const busy = profile ? togglingId === profile.id : false;
+
+  const refetchProfile = async () => {
+    if (!id) return;
+    const sel = 'id,user_id,name,age,category,city,description,zone,postal_code,languages,available_days,accompaniment_types,hair_color,height_cm,weight_kg,profession,nationality,birth_place,image_url,rating,reviews_count,views_count,verified,phone_verified,premium,public_plan,tags,phone,whatsapp,schedule,status,profile_media(id,media_type,visibility,public_url,storage_path,position)';
+    const { data } = await supabase.from('profiles').select(sel).eq('id', id).maybeSingle();
+    if (data?.id) {
+      const row = data as any;
+      if (row.private_images_count == null) row.private_images_count = 0;
+      if (row.private_videos_count == null) row.private_videos_count = 0;
+      setProfile(toProfileCardModel(row, row.profile_media ?? []));
+    }
+  };
+
   useEffect(() => {
     const load = async () => {
       setFetching(true);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(
-          `
+
+      const selectWithCounts = `
+        id,
+        user_id,
+        name,
+        age,
+        category,
+        city,
+        description,
+        zone,
+        postal_code,
+        languages,
+        available_days,
+        accompaniment_types,
+        hair_color,
+        height_cm,
+        weight_kg,
+        profession,
+        nationality,
+        birth_place,
+        image_url,
+        rating,
+        reviews_count,
+        views_count,
+        verified,
+        phone_verified,
+        premium,
+        public_plan,
+        private_images_count,
+        private_videos_count,
+        tags,
+        phone,
+        whatsapp,
+        schedule,
+        status,
+        profile_media (
           id,
-          user_id,
-          name,
-          age,
-          category,
-          city,
-          description,
-          zone,
-          postal_code,
-          languages,
-          available_days,
-          accompaniment_types,
-          hair_color,
-          height_cm,
-          weight_kg,
-          profession,
-          nationality,
-          birth_place,
-          image_url,
-          rating,
-          reviews_count,
-          views_count,
-          verified,
-          phone_verified,
-          premium,
-          public_plan,
-          tags,
-          phone,
-          whatsapp,
-          schedule,
-          status,
-          profile_media (
-            id,
-            media_type,
-            visibility,
-            public_url,
-            storage_path,
-            position
-          )
-        `
+          media_type,
+          visibility,
+          public_url,
+          storage_path,
+          position
         )
+      `;
+
+      const selectWithoutCounts = `
+        id,
+        user_id,
+        name,
+        age,
+        category,
+        city,
+        description,
+        zone,
+        postal_code,
+        languages,
+        available_days,
+        accompaniment_types,
+        hair_color,
+        height_cm,
+        weight_kg,
+        profession,
+        nationality,
+        birth_place,
+        image_url,
+        rating,
+        reviews_count,
+        views_count,
+        verified,
+        phone_verified,
+        premium,
+        public_plan,
+        tags,
+        phone,
+        whatsapp,
+        schedule,
+        status,
+        profile_media (
+          id,
+          media_type,
+          visibility,
+          public_url,
+          storage_path,
+          position
+        )
+      `;
+
+      let data: any = null;
+      let error: any = null;
+
+      const res = await supabase
+        .from('profiles')
+        .select(selectWithCounts)
         .eq('id', id)
         .maybeSingle();
+
+      data = res.data;
+      error = res.error;
+
+      // Si falla (p. ej. columnas private_*_count no existen porque no se ha ejecutado la migración), reintentar sin ellas
+      const isColumnError =
+        error &&
+        (res.error?.code === 'PGRST204' ||
+          res.error?.code === '42703' ||
+          res.error?.message?.includes('column') ||
+          res.error?.message?.includes('private_images_count') ||
+          res.error?.message?.includes('private_videos_count') ||
+          (res.error as any)?.status === 400);
+      if (isColumnError) {
+        const fallback = await supabase
+          .from('profiles')
+          .select(selectWithoutCounts)
+          .eq('id', id)
+          .maybeSingle();
+        if (!fallback.error) {
+          data = fallback.data;
+          error = null;
+          if (data) {
+            data.private_images_count = 0;
+            data.private_videos_count = 0;
+          }
+        }
+      }
 
       if (error) {
         console.error('Error loading profile:', error);
@@ -83,13 +179,20 @@ export default function ProfilePage() {
         return;
       }
 
-      // Si no está aprobado, solo lo podrá ver el dueño (o admin/moderator por RLS).
-      // RLS ya protege; aquí solo convertimos.
-      setProfile(toProfileCardModel(data as any, (data as any).profile_media ?? []));
+      const mapped = toProfileCardModel(data, data.profile_media ?? []);
+      setProfile(mapped);
       setFetching(false);
+
+      if (!viewRecordedRef.current) {
+        viewRecordedRef.current = true;
+        supabase.rpc('record_profile_view', { p_profile_id: id })
+          .then(() => {
+            setProfile((prev: any) => prev ? { ...prev, views: (prev.views ?? 0) + 1 } : null);
+          })
+          .catch(() => { /* RPC no existe si no se ha ejecutado la migración 20260130011000 */ });
+      }
     };
 
-    // Espera a que sepamos si hay usuario (para evitar parpadeos en algunos casos).
     if (!loading) load();
   }, [id, loading]);
 
@@ -121,15 +224,32 @@ export default function ProfilePage() {
       <Header />
       
       <main className="container mx-auto px-4 py-8">
-        {/* Back Button */}
-        <Button
-          variant="ghost"
-          onClick={() => router.back()}
-          className="mb-6 -ml-2 text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Volver
-        </Button>
+        {/* Back + Favorito */}
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <Button
+            variant="ghost"
+            onClick={() => router.back()}
+            className="-ml-2 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Volver
+          </Button>
+          {user && limit > 0 && (
+            <Button
+              variant={fav ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => toggle(profile.id)}
+              disabled={!canAdd && !fav}
+              className={fav ? 'gap-2' : 'gap-2'}
+            >
+              <Heart className={`w-4 h-4 ${fav ? 'fill-current' : ''}`} />
+              {fav ? 'En favoritos' : 'Añadir a favoritos'}
+            </Button>
+          )}
+          {user && limit === 0 && !fav && (
+            <span className="text-sm text-muted-foreground">Plan Gratis: sin favoritos. <Link href="/tarifas" className="text-primary hover:underline">Mejorar plan</Link></span>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Gallery Column */}
@@ -138,13 +258,21 @@ export default function ProfilePage() {
               images={profile.images}
               videos={profile.videos}
               name={profile.name}
+              privateImagesCount={profile.privateImagesCount ?? 0}
+              privateVideosCount={profile.privateVideosCount ?? 0}
+              showPrivateBlurred={!user}
             />
           </div>
 
           {/* Info Column */}
           <div className="order-2">
             <div className="lg:sticky lg:top-24">
-              <ProfileInfo profile={profile} />
+              <ProfileInfo
+                profile={profile}
+                currentUserId={user?.id}
+                profileId={profile.id}
+                onRated={refetchProfile}
+              />
             </div>
           </div>
         </div>

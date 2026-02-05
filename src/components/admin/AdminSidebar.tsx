@@ -12,9 +12,10 @@ import {
   Home,
   UserCog,
   CreditCard,
+  Mail,
 } from 'lucide-react';
 
-type AdminView = 'dashboard' | 'profiles' | 'moderation' | 'stats' | 'users' | 'subscriptions';
+type AdminView = 'dashboard' | 'profiles' | 'moderation' | 'stats' | 'users' | 'subscriptions' | 'contact';
 
 interface AdminSidebarProps {
   activeView: AdminView;
@@ -39,6 +40,7 @@ export const AdminSidebar = ({
     { id: 'dashboard' as AdminView, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'profiles' as AdminView, label: 'Perfiles', icon: Users },
     { id: 'moderation' as AdminView, label: 'Moderación', icon: ShieldCheck },
+    { id: 'contact' as AdminView, label: 'Contacto', icon: Mail },
     ...(isAdmin
       ? [
           { id: 'stats' as AdminView, label: 'Estadísticas', icon: BarChart3 },

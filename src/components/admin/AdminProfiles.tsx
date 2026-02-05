@@ -356,6 +356,7 @@ export const AdminProfiles = () => {
                 <TableRow>
                   <TableHead>Foto</TableHead>
                   <TableHead>Nombre</TableHead>
+                  <TableHead className="font-mono text-xs">user_id</TableHead>
                   <TableHead>Actividad</TableHead>
                   <TableHead>Ciudad</TableHead>
                   <TableHead>Estado</TableHead>
@@ -382,6 +383,9 @@ export const AdminProfiles = () => {
                       <div className="text-xs text-muted-foreground">
                         {profile.zone ? profile.zone : '—'}
                       </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground" title={profile.user_id}>
+                      {profile.user_id.slice(0, 8)}…
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {activityLabel(profile)}

@@ -9,7 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Clock, XCircle, AlertTriangle, ShieldCheck, ShieldOff, CreditCard, PhoneCall, Info } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, AlertTriangle, ShieldCheck, ShieldOff, CreditCard, PhoneCall, Info, Heart } from 'lucide-react';
+import { useFavorites } from '@/hooks/useFavorites';
 import { ProfileMediaManager } from '@/components/profile/ProfileMediaManager';
 import Link from 'next/link';
 
@@ -34,6 +35,7 @@ export default function CuentaPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user, loading } = useAuth();
+  const { count: favoritesCount, limit: favoritesLimit } = useFavorites();
 
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionRow | null>(null);
@@ -219,6 +221,25 @@ export default function CuentaPage() {
                 </div>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card border-border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Heart className="w-5 h-5 text-primary" />
+              Mis favoritos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-3">
+              {favoritesLimit >= 9999
+                ? `Tienes ${favoritesCount} perfiles guardados (ilimitados con VIP).`
+                : `Tienes ${favoritesCount} de ${favoritesLimit} favoritos.`}
+            </p>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/favoritos">Ver mis favoritos</Link>
+            </Button>
           </CardContent>
         </Card>
 

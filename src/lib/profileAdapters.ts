@@ -30,6 +30,8 @@ type DbProfileRow = {
   phone: string | null;
   whatsapp: boolean | null;
   schedule: string | null;
+  private_images_count?: number | null;
+  private_videos_count?: number | null;
 };
 
 type DbMediaRow = {
@@ -68,6 +70,7 @@ export function toProfileCardModel(profile: DbProfileRow, media: DbMediaRow[] = 
 
   return {
     id: profile.id,
+    userId: profile.user_id,
     name: profile.name,
     age: profile.age ?? 0,
     category: toCategory(profile.category),
@@ -76,6 +79,8 @@ export function toProfileCardModel(profile: DbProfileRow, media: DbMediaRow[] = 
     image: fallbackImage,
     images: images.length ? images : [fallbackImage],
     videos,
+    privateImagesCount: profile.private_images_count ?? 0,
+    privateVideosCount: profile.private_videos_count ?? 0,
     rating: Number(profile.rating ?? 0),
     reviews: Number(profile.reviews_count ?? 0),
     views: Number(profile.views_count ?? 0),

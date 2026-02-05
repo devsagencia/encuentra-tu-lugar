@@ -84,6 +84,10 @@ export const Header = () => {
                       <User className="w-4 h-4 mr-2" />
                       {hasProfile ? 'Dashboard anunciante' : 'Dashboard usuario'}
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/favoritos')}>
+                      <Heart className="w-4 h-4 mr-2" />
+                      Mis favoritos
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => router.push('/crear-anuncio')}>
                       <Plus className="w-4 h-4 mr-2" />
@@ -157,6 +161,12 @@ export const Header = () => {
                       className="text-lg text-foreground hover:text-primary transition-colors"
                     >
                       {hasProfile ? 'Dashboard anunciante' : 'Dashboard usuario'}
+                    </Link>
+                    <Link
+                      href="/favoritos"
+                      className="text-lg text-foreground hover:text-primary transition-colors"
+                    >
+                      Mis favoritos
                     </Link>
                     <Link
                       href="/crear-anuncio"

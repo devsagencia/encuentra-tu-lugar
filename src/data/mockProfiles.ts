@@ -23,6 +23,8 @@ export type Activity = (typeof activityOptions)[number]['id'];
 
 export interface Profile {
   id: string;
+  /** user_id del anunciante (para no mostrar "Valorar" al dueño del perfil). */
+  userId?: string;
   name: string;
   age: number;
   category: Category;
@@ -31,6 +33,10 @@ export interface Profile {
   image: string;
   images: string[];
   videos: string[];
+  /** Número de imágenes con visibilidad no pública (para mostrar placeholders desenfocados). */
+  privateImagesCount?: number;
+  /** Número de vídeos con visibilidad no pública (para mostrar placeholders desenfocados). */
+  privateVideosCount?: number;
   rating: number;
   reviews: number;
   views: number;

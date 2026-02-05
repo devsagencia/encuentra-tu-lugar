@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
   Star,
   BadgeCheck,
@@ -22,12 +23,68 @@ import { Profile, activityOptions } from '@/data/mockProfiles';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProfileInfoProps {
   profile: Profile;
+  currentUserId?: string;
+  profileId?: string;
+  onRated?: () => void;
 }
 
-export const ProfileInfo = ({ profile }: ProfileInfoProps) => {
+export const ProfileInfo = ({ profile, currentUserId, profileId, onRated }: ProfileInfoProps) => {
+  const { toast } = useToast();
+  const [myRating, setMyRating] = useState<number | null>(null);
+  const [ratingLoading, setRatingLoading] = useState(false);
+  const [submittingRating, setSubmittingRating] = useState(false);
+  const [ratingsAvailable, setRatingsAvailable] = useState(true);
+  const canRate = Boolean(currentUserId && profileId && profile.userId !== currentUserId && ratingsAvailable);
+
+  useEffect(() => {
+    if (!currentUserId || !profileId) return;
+    let cancelled = false;
+    setRatingLoading(true);
+    supabase
+      .from('profile_ratings')
+      .select('rating')
+      .eq('user_id', currentUserId)
+      .eq('profile_id', profileId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          setRatingsAvailable(false);
+          return;
+        }
+        if (data) setMyRating((data as { rating: number }).rating);
+      })
+      .finally(() => { if (!cancelled) setRatingLoading(false); });
+    return () => { cancelled = true; };
+  }, [currentUserId, profileId]);
+
+  const handleSetRating = async (stars: number) => {
+    if (!currentUserId || !profileId || submittingRating) return;
+    setSubmittingRating(true);
+    const { error } = await supabase.from('profile_ratings').upsert(
+      { user_id: currentUserId, profile_id: profileId, rating: stars },
+      { onConflict: 'user_id,profile_id' }
+    );
+    setSubmittingRating(false);
+    if (error) {
+      toast({
+        title: 'Error al valorar',
+        description: error.message.includes('404') || error.message.includes('relation')
+          ? 'Ejecuta en Supabase la migración 20260130011000_record_profile_view_and_ratings.sql'
+          : error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+    setMyRating(stars);
+    onRated?.();
+  };
+
   const activities = profile.accompanimentTypes ?? [];
   const primaryActivity = activities[0];
   const activity = primaryActivity ? activityOptions.find((a) => a.id === primaryActivity) : null;
@@ -86,7 +143,7 @@ export const ProfileInfo = ({ profile }: ProfileInfoProps) => {
         </div>
       </div>
 
-      {/* Rating */}
+      {/* Rating y visitas */}
       <div className="glass-card p-4 space-y-2">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1">
@@ -105,8 +162,33 @@ export const ProfileInfo = ({ profile }: ProfileInfoProps) => {
           <span className="text-muted-foreground">({profile.reviews} reseñas)</span>
         </div>
         <p className="text-sm text-muted-foreground">
-          {profile.views.toLocaleString()} visitas al perfil
+          {(profile.views ?? 0).toLocaleString()} visitas al perfil
         </p>
+        {canRate && (
+          <div className="pt-2 border-t border-border/50">
+            <p className="text-sm text-muted-foreground mb-1">
+              {myRating != null ? 'Tu valoración:' : 'Valora este perfil:'}
+            </p>
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((stars) => (
+                <button
+                  key={stars}
+                  type="button"
+                  disabled={submittingRating || ratingLoading}
+                  onClick={() => handleSetRating(stars)}
+                  className="p-0.5 rounded hover:bg-muted/50 disabled:opacity-50 transition-colors"
+                  aria-label={`${stars} estrellas`}
+                >
+                  <Star
+                    className={`w-6 h-6 ${
+                      (myRating ?? 0) >= stars ? 'text-amber-500 fill-amber-500' : 'text-muted-foreground'
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <Separator className="bg-border/50" />

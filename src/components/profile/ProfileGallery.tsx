@@ -1,25 +1,61 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, X, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 interface ProfileGalleryProps {
   images: string[];
   videos: string[];
   name: string;
+  /** Número de imágenes privadas (solo para mostrar placeholders desenfocados). */
+  privateImagesCount?: number;
+  /** Número de vídeos privados (solo para mostrar placeholders desenfocados). */
+  privateVideosCount?: number;
+  /** Si true, se muestran placeholders desenfocados para el contenido privado (visitantes sin login). */
+  showPrivateBlurred?: boolean;
 }
 
-export const ProfileGallery = ({ images, videos, name }: ProfileGalleryProps) => {
+const PrivatePlaceholder = ({
+  type,
+  className,
+}: {
+  type: 'image' | 'video';
+  className?: string;
+}) => (
+  <div
+    className={cn(
+      'relative flex flex-col items-center justify-center rounded-lg text-muted-foreground select-none',
+      'bg-muted/90 backdrop-blur-xl border border-border/60',
+      type === 'video' && 'aspect-video',
+      className
+    )}
+    aria-hidden
+  >
+    <Lock className="w-8 h-8 sm:w-10 sm:h-10 mb-2 opacity-90" />
+    <span className="text-xs sm:text-sm font-medium">Contenido privado</span>
+    <span className="text-[10px] sm:text-xs mt-0.5 opacity-80">Inicia sesión para ver</span>
+  </div>
+);
+
+export const ProfileGallery = ({
+  images,
+  videos,
+  name,
+  privateImagesCount = 0,
+  privateVideosCount = 0,
+  showPrivateBlurred = false,
+}: ProfileGalleryProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [showVideos, setShowVideos] = useState(false);
 
-  const allMedia = [...images];
-  const hasVideos = videos.length > 0;
+  const hasPrivateImages = showPrivateBlurred && privateImagesCount > 0;
+  const hasPrivateVideos = showPrivateBlurred && privateVideosCount > 0;
+  const hasVideos = videos.length > 0 || hasPrivateVideos;
 
   const nextImage = () => {
     setCurrentIndex((prev) => (prev + 1) % images.length);
@@ -81,8 +117,8 @@ export const ProfileGallery = ({ images, videos, name }: ProfileGalleryProps) =>
         </div>
       </div>
 
-      {/* Thumbnails */}
-      {images.length > 1 && (
+      {/* Thumbnails (públicas + placeholders de contenido privado) */}
+      {(images.length > 1 || hasPrivateImages) && (
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {images.map((img, index) => (
             <button
@@ -102,15 +138,24 @@ export const ProfileGallery = ({ images, videos, name }: ProfileGalleryProps) =>
               />
             </button>
           ))}
+          {hasPrivateImages &&
+            Array.from({ length: privateImagesCount }).map((_, i) => (
+              <div
+                key={`private-img-${i}`}
+                className="flex-shrink-0 w-16 h-20 sm:w-20 sm:h-24 rounded-lg overflow-hidden"
+              >
+                <PrivatePlaceholder type="image" className="w-full h-full" />
+              </div>
+            ))}
         </div>
       )}
 
-      {/* Videos Section */}
+      {/* Videos Section (públicos + placeholders de contenido privado) */}
       {hasVideos && (
         <div className="space-y-3">
           <h3 className="font-semibold text-foreground flex items-center gap-2">
             <Play className="w-4 h-4 text-primary" />
-            Vídeos ({videos.length})
+            Vídeos ({videos.length + (hasPrivateVideos ? privateVideosCount : 0)})
           </h3>
           <div className="grid grid-cols-1 gap-3">
             {videos.map((video, index) => (
@@ -125,7 +170,23 @@ export const ProfileGallery = ({ images, videos, name }: ProfileGalleryProps) =>
                 </video>
               </div>
             ))}
+            {hasPrivateVideos &&
+              Array.from({ length: privateVideosCount }).map((_, i) => (
+                <PrivatePlaceholder key={`private-vid-${i}`} type="video" className="min-h-[180px]" />
+              ))}
           </div>
+        </div>
+      )}
+
+      {/* Mensaje para visitantes: hay contenido privado */}
+      {showPrivateBlurred && (privateImagesCount > 0 || privateVideosCount > 0) && (
+        <div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3 text-center text-sm text-muted-foreground">
+          <Lock className="w-4 h-4 inline-block mr-1.5 align-middle" />
+          Este perfil tiene contenido exclusivo para usuarios registrados.
+          <Link href="/auth" className="ml-1.5 font-medium text-primary hover:underline">
+            Inicia sesión
+          </Link>
+          {' '}para verlo.
         </div>
       )}
 

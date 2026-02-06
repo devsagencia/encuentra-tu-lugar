@@ -1,26 +1,5 @@
--- Registrar vista al abrir un perfil (anon o auth) y actualizar profiles.views_count
-CREATE OR REPLACE FUNCTION public.record_profile_view(p_profile_id uuid)
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = p_profile_id AND status = 'approved') THEN
-    RETURN;
-  END IF;
-  INSERT INTO public.profile_stats (profile_id, view_date, views)
-  VALUES (p_profile_id, CURRENT_DATE, 1)
-  ON CONFLICT (profile_id, view_date) DO UPDATE SET views = profile_stats.views + 1;
-  UPDATE public.profiles
-  SET views_count = (SELECT COALESCE(SUM(views), 0)::integer FROM public.profile_stats WHERE profile_id = p_profile_id)
-  WHERE id = p_profile_id;
-END;
-$$;
+-- Solo tabla de valoraciones (estrellas). Ejecuta esto en Supabase si profile_ratings da 404.
 
-COMMENT ON FUNCTION public.record_profile_view(uuid) IS 'Registra una vista del perfil (anon/auth) y actualiza views_count.';
-
--- Tabla de valoraciones (estrellas) por usuario
 CREATE TABLE IF NOT EXISTS public.profile_ratings (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -32,24 +11,24 @@ CREATE TABLE IF NOT EXISTS public.profile_ratings (
 
 ALTER TABLE public.profile_ratings ENABLE ROW LEVEL SECURITY;
 
--- Cualquiera puede leer valoraciones (para mostrar media y reseñas)
+DROP POLICY IF EXISTS "Anyone can read ratings" ON public.profile_ratings;
 CREATE POLICY "Anyone can read ratings"
   ON public.profile_ratings FOR SELECT
   USING (true);
 
--- Solo autenticados pueden insertar/actualizar su propia valoración
+DROP POLICY IF EXISTS "Users can insert own rating" ON public.profile_ratings;
 CREATE POLICY "Users can insert own rating"
   ON public.profile_ratings FOR INSERT
   TO authenticated
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own rating" ON public.profile_ratings;
 CREATE POLICY "Users can update own rating"
   ON public.profile_ratings FOR UPDATE
   TO authenticated
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
--- No valorar tu propio perfil: lo comprobamos en la app o con trigger
 CREATE OR REPLACE FUNCTION public.sync_profile_rating_from_ratings()
 RETURNS TRIGGER
 LANGUAGE plpgsql

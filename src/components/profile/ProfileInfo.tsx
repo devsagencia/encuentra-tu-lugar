@@ -143,23 +143,26 @@ export const ProfileInfo = ({ profile, currentUserId, profileId, onRated }: Prof
         </div>
       </div>
 
-      {/* Rating y visitas */}
+      {/* Puntuación media del perfil y visitas */}
       <div className="glass-card p-4 space-y-2">
-        <div className="flex items-center gap-3">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Puntuación media</p>
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`w-5 h-5 ${
-                  i < Math.floor(profile.rating)
-                    ? 'text-primary fill-primary'
-                    : 'text-muted'
-                }`}
-              />
-            ))}
+            {[1, 2, 3, 4, 5].map((i) => {
+              const r = Number(profile.rating ?? 0);
+              const filled = i <= Math.floor(r);
+              return (
+                <Star
+                  key={i}
+                  className={`w-5 h-5 shrink-0 ${filled ? 'text-primary fill-primary' : 'text-muted'}`}
+                />
+              );
+            })}
           </div>
-          <span className="text-xl font-bold text-foreground">{profile.rating}</span>
-          <span className="text-muted-foreground">({profile.reviews} reseñas)</span>
+          <span className="text-xl font-bold text-foreground tabular-nums">
+            {Number(profile.rating ?? 0).toFixed(1)}
+          </span>
+          <span className="text-muted-foreground">({Number(profile.reviews ?? 0)} reseñas)</span>
         </div>
         <p className="text-sm text-muted-foreground">
           {(profile.views ?? 0).toLocaleString()} visitas al perfil

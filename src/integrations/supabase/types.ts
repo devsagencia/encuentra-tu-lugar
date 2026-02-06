@@ -379,6 +379,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      record_profile_view: {
+        Args: {
+          p_profile_id: string
+        }
+        Returns: void
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

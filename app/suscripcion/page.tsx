@@ -171,10 +171,17 @@ function PlanCard({
           {loading ? 'Procesando…' : id === 'free' ? 'Usar Gratis' : `Elegir ${title}`}
         </Button>
 
-        <div className="text-xs text-muted-foreground flex items-center gap-2">
-          <Lock className="w-3 h-3" />
-          Activación inmediata en modo demo (sin pasarela de pago).
-        </div>
+        {id === 'free' ? (
+          <div className="text-xs text-muted-foreground flex items-center gap-2">
+            <Lock className="w-3 h-3" />
+            Sin pago. Activación inmediata.
+          </div>
+        ) : (
+          <div className="text-xs text-muted-foreground flex items-center gap-2">
+            <Lock className="w-3 h-3" />
+            Pago seguro con Stripe. Tras pagar se activa tu plan.
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -198,25 +205,55 @@ export default function SuscripcionPage() {
     }
 
     setSaving(plan);
-    const { error } = await supabase.from('subscriptions').upsert(
-      {
-        user_id: user.id,
-        plan,
-        status: plan === 'free' ? 'inactive' : 'active',
-      },
-      { onConflict: 'user_id' }
-    );
-    setSaving(null);
 
-    if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    if (plan === 'free') {
+      const { error } = await supabase.from('subscriptions').upsert(
+        { user_id: user.id, plan: 'free', status: 'inactive' },
+        { onConflict: 'user_id' }
+      );
+      setSaving(null);
+      if (error) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        return;
+      }
+      toast({ title: 'Suscripción actualizada', description: 'Plan Gratis activado.' });
       return;
     }
 
-    toast({
-      title: 'Suscripción actualizada',
-      description: plan === 'free' ? 'Plan Gratis activado.' : `Plan ${plan.toUpperCase()} activado.`,
-    });
+    // Premium o VIP: redirigir a Stripe Checkout
+    try {
+      const res = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, user_id: user.id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setSaving(null);
+      if (!res.ok) {
+        toast({
+          title: 'Error',
+          description: data.error || 'No se pudo abrir la pasarela de pago.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      toast({
+        title: 'Error',
+        description: 'No se recibió la URL de pago.',
+        variant: 'destructive',
+      });
+    } catch (e) {
+      setSaving(null);
+      toast({
+        title: 'Error',
+        description: 'Error de conexión. Inténtalo de nuevo.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (

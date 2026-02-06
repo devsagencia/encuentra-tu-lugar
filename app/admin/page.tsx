@@ -11,9 +11,10 @@ import { AdminStats } from '@/components/admin/AdminStats';
 import { AdminUsers } from '@/components/admin/AdminUsers';
 import { AdminSubscriptions } from '@/components/admin/AdminSubscriptions';
 import { AdminContact } from '@/components/admin/AdminContact';
+import { AdminReports } from '@/components/admin/AdminReports';
 import { Loader2 } from 'lucide-react';
 
-type AdminView = 'dashboard' | 'profiles' | 'moderation' | 'stats' | 'users' | 'subscriptions' | 'contact';
+type AdminView = 'dashboard' | 'profiles' | 'moderation' | 'stats' | 'users' | 'subscriptions' | 'contact' | 'reports';
 
 export default function AdminPage() {
   const { user, loading, isAdmin, isModerator } = useAuth();
@@ -61,6 +62,8 @@ export default function AdminPage() {
         return isAdmin ? <AdminSubscriptions /> : <AdminDashboard />;
       case 'contact':
         return <AdminContact />;
+      case 'reports':
+        return <AdminReports />;
       default:
         return <AdminDashboard />;
     }

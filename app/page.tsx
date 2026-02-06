@@ -20,6 +20,7 @@ export default function HomePage() {
   const [ageRange, setAgeRange] = useState<[number, number]>([18, 60]);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [dbProfiles, setDbProfiles] = useState<Profile[]>([]);
+  const [loading, setLoading] = useState(true);
   const [heroStats, setHeroStats] = useState<{ activeProfiles: number; cities: number; satisfactionPercent: number }>({
     activeProfiles: 0,
     cities: 0,
@@ -35,6 +36,7 @@ export default function HomePage() {
 
   useEffect(() => {
     const load = async () => {
+      setLoading(true);
       const { data, error } = await supabase
         .from('profiles')
         .select(
@@ -72,9 +74,9 @@ export default function HomePage() {
         .limit(50);
 
       if (error) {
-        // Silencioso: si falla, evitamos romper la UI
         console.error('Error loading public profiles:', error);
         setDbProfiles([]);
+        setLoading(false);
         return;
       }
 
@@ -83,6 +85,7 @@ export default function HomePage() {
       );
 
       setDbProfiles(mapped);
+      setLoading(false);
 
       // Stats reales para el Hero (basadas en perfiles aprobados cargados)
       const activeProfiles = mapped.length;
@@ -208,7 +211,11 @@ export default function HomePage() {
               </p>
             </div>
 
-            {filteredProfiles.length > 0 ? (
+            {loading ? (
+              <div className="glass-card p-12 text-center">
+                <p className="text-xl text-muted-foreground">Cargando resultados…</p>
+              </div>
+            ) : filteredProfiles.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredProfiles.map((profile) => (
                   <ProfileCard key={profile.id} profile={profile} />

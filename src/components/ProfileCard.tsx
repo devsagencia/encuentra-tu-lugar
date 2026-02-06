@@ -51,7 +51,7 @@ export const ProfileCard = ({ profile }: ProfileCardProps) => {
         {/* Views Counter */}
         <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-background/80 backdrop-blur-sm">
           <Eye className="w-3 h-3 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">{profile.views.toLocaleString()}</span>
+          <span className="text-xs text-muted-foreground">{(profile.views ?? 0).toLocaleString()}</span>
         </div>
 
         {/* Favorito */}
@@ -132,27 +132,33 @@ export const ProfileCard = ({ profile }: ProfileCardProps) => {
             <BadgeCheck className="w-5 h-5 text-primary" />
           )}
         </div>
+
+        {/* Rating / Puntuación media (data-card-rating para localizar en F12) */}
+        <div
+          data-card-rating
+          className="flex items-center gap-2 flex-wrap min-h-[2rem] py-1"
+        >
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Valoración</span>
+          <div className="flex items-center gap-1" role="img" aria-label={`${Number(profile?.rating ?? 0).toFixed(1)} de 5 estrellas`}>
+            {[1, 2, 3, 4, 5].map((i) => {
+              const r = Number(profile?.rating ?? 0);
+              const filled = !Number.isNaN(r) && i <= Math.floor(r);
+              return (
+                <Star
+                  key={i}
+                  className={`w-5 h-5 shrink-0 ${filled ? 'text-primary fill-primary' : 'text-muted-foreground fill-transparent'}`}
+                />
+              );
+            })}
+          </div>
+          <span className="text-sm font-semibold text-foreground tabular-nums">
+            {Number.isNaN(Number(profile?.rating)) ? '0.0' : Number(profile?.rating ?? 0).toFixed(1)}
+          </span>
+          <span className="text-xs text-muted-foreground">({Number(profile?.reviews ?? 0) || 0} reseñas)</span>
+        </div>
         
         {/* Location */}
         <p className="text-sm text-muted-foreground">📍 {profile.city}</p>
-        
-        {/* Rating */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`w-4 h-4 ${
-                  i < Math.floor(profile.rating)
-                    ? 'text-primary fill-primary'
-                    : 'text-muted'
-                }`}
-              />
-            ))}
-          </div>
-          <span className="text-sm font-medium text-foreground">{profile.rating}</span>
-          <span className="text-sm text-muted-foreground">({profile.reviews} reseñas)</span>
-        </div>
         
         {/* Description */}
         <p className="text-sm text-muted-foreground line-clamp-2">
@@ -170,7 +176,7 @@ export const ProfileCard = ({ profile }: ProfileCardProps) => {
               {tag}
             </Badge>
           ))}
-          {profile.tags.length > 3 && (
+          {(profile.tags ?? []).length > 3 && (
             <Badge
               variant="outline"
               className="text-xs border-border/50 text-muted-foreground"

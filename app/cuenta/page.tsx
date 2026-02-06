@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,7 +32,7 @@ type SubscriptionRow = {
   current_period_end: string | null;
 };
 
-export default function CuentaPage() {
+function CuentaContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -409,6 +409,23 @@ export default function CuentaPage() {
         </Card>
       </main>
     </div>
+  );
+}
+
+export default function CuentaPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen">
+          <Header />
+          <main className="container mx-auto px-4 py-10 max-w-3xl">
+            <p className="text-muted-foreground">Cargando…</p>
+          </main>
+        </div>
+      }
+    >
+      <CuentaContent />
+    </Suspense>
   );
 }
 

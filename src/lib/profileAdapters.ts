@@ -2,6 +2,7 @@ import type { Profile, Category } from '@/data/mockProfiles';
 
 type DbProfileRow = {
   id: string;
+  user_id?: string | null;
   name: string;
   age: number | null;
   category: string;

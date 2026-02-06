@@ -92,8 +92,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url: session.url });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Error al crear la sesión';
-    console.error('[create-checkout-session] Stripe error:', err);
+    const raw = err as { message?: string; type?: string; code?: string; raw?: { message?: string } };
+    const message =
+      raw?.message ||
+      raw?.raw?.message ||
+      (err instanceof Error ? err.message : String(err)) ||
+      'Error al crear la sesión';
+    console.error('[create-checkout-session] Stripe error:', message, err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

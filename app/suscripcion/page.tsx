@@ -194,10 +194,12 @@ export default function SuscripcionPage() {
   const { user, loading } = useAuth();
   const { toast } = useToast();
   const [saving, setSaving] = useState<PlanId | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const canUse = useMemo(() => !loading && Boolean(user), [loading, user]);
 
   const setPlan = async (plan: PlanId, type: 'anunciante' | 'visitante' = 'visitante') => {
+    setCheckoutError(null);
     if (!user) {
       toast({
         title: 'Inicia sesión',
@@ -233,9 +235,11 @@ export default function SuscripcionPage() {
       const data = await res.json().catch(() => ({}));
       setSaving(null);
       if (!res.ok) {
+        const msg = data.error || 'No se pudo abrir la pasarela de pago.';
+        setCheckoutError(msg);
         toast({
-          title: 'Error',
-          description: data.error || 'No se pudo abrir la pasarela de pago.',
+          title: 'Error al crear el pago',
+          description: msg,
           variant: 'destructive',
         });
         return;
@@ -244,18 +248,14 @@ export default function SuscripcionPage() {
         window.location.href = data.url;
         return;
       }
-      toast({
-        title: 'Error',
-        description: 'No se recibió la URL de pago.',
-        variant: 'destructive',
-      });
+      const msg = 'No se recibió la URL de pago.';
+      setCheckoutError(msg);
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
     } catch (e) {
       setSaving(null);
-      toast({
-        title: 'Error',
-        description: 'Error de conexión. Inténtalo de nuevo.',
-        variant: 'destructive',
-      });
+      const msg = e instanceof Error ? e.message : 'Error de conexión. Inténtalo de nuevo.';
+      setCheckoutError(msg);
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
     }
   };
 
@@ -272,6 +272,12 @@ export default function SuscripcionPage() {
           {!canUse ? (
             <div className="text-sm text-muted-foreground">
               Para activar Premium/VIP necesitas iniciar sesión.
+            </div>
+          ) : null}
+          {checkoutError ? (
+            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+              <strong>Error del servidor:</strong>{' '}
+              <span className="break-words">{checkoutError}</span>
             </div>
           ) : null}
         </div>

@@ -4,6 +4,7 @@ import { Heart, Menu, User, Plus, Settings, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Sheet,
   SheetContent,
@@ -70,13 +71,22 @@ export const Header = () => {
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="hidden sm:flex text-muted-foreground hover:text-foreground"
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="relative h-9 w-9 rounded-full"
                     >
-                      <User className="w-4 h-4 mr-2" />
-                      Mi cuenta
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage
+                          src={(user.user_metadata?.avatar_url as string) ?? undefined}
+                          alt="Tu foto"
+                        />
+                        <AvatarFallback className="bg-primary/20 text-primary text-sm font-medium">
+                          {user.email
+                            ? user.email.slice(0, 2).toUpperCase()
+                            : <User className="h-4 w-4" />}
+                        </AvatarFallback>
+                      </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
@@ -140,6 +150,17 @@ export const Header = () => {
               </Button>
             </SheetTrigger>
             <SheetContent className="bg-background border-border">
+              {user ? (
+                <div className="flex items-center gap-3 pb-4 mt-4 border-b border-border">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={(user.user_metadata?.avatar_url as string) ?? undefined} alt="" />
+                    <AvatarFallback className="bg-primary/20 text-primary text-sm">
+                      {user.email ? user.email.slice(0, 2).toUpperCase() : <User className="h-4 w-4" />}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm text-muted-foreground truncate">{user.email}</span>
+                </div>
+              ) : null}
               <nav className="flex flex-col gap-4 mt-8">
                 <Link href="/" className="text-lg text-foreground hover:text-primary transition-colors">
                   Inicio

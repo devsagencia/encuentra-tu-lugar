@@ -9,9 +9,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Clock, XCircle, AlertTriangle, ShieldCheck, ShieldOff, CreditCard, PhoneCall, Info, Heart } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, AlertTriangle, ShieldCheck, ShieldOff, CreditCard, PhoneCall, Info, Heart, User, Upload } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
 import { ProfileMediaManager } from '@/components/profile/ProfileMediaManager';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 
 type ProfileRow = {
@@ -40,6 +41,7 @@ export default function CuentaPage() {
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionRow | null>(null);
   const [fetching, setFetching] = useState(true);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push('/auth?next=/cuenta');
@@ -126,6 +128,38 @@ export default function CuentaPage() {
     );
   }, [profile?.verified]);
 
+  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Formato no válido', description: 'Sube una imagen (JPG, PNG, etc.).', variant: 'destructive' });
+      return;
+    }
+    setAvatarUploading(true);
+    const ext = file.name.split('.').pop() || 'jpg';
+    const path = `${user.id}/avatar.${ext}`;
+    const { error: uploadError } = await supabase.storage.from('profile-media').upload(path, file, { upsert: true });
+    if (uploadError) {
+      toast({ title: 'Error al subir', description: uploadError.message, variant: 'destructive' });
+      setAvatarUploading(false);
+      return;
+    }
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const publicUrl = `${supabaseUrl}/storage/v1/object/public/profile-media/${path}`;
+    const { error: updateError } = await supabase.auth.updateUser({ data: { avatar_url: publicUrl } });
+    if (updateError) {
+      toast({ title: 'Error al guardar', description: updateError.message, variant: 'destructive' });
+      setAvatarUploading(false);
+      return;
+    }
+    toast({ title: 'Foto actualizada', description: 'Tu foto de perfil se verá en el header.' });
+    setAvatarUploading(false);
+    e.target.value = '';
+    router.refresh();
+  };
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -137,6 +171,43 @@ export default function CuentaPage() {
             Accede a tu cuenta. Si quieres anunciarte, podrás crear tu perfil desde aquí.
           </p>
         </div>
+
+        <Card className="glass-card border-border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="w-5 h-5" />
+              Foto de perfil
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col sm:flex-row items-start gap-4">
+            <Avatar className="h-20 w-20">
+              <AvatarImage src={avatarUrl} alt="Tu foto" />
+              <AvatarFallback className="bg-primary/20 text-primary text-2xl font-medium">
+                {user?.email ? user.email.slice(0, 2).toUpperCase() : <User className="h-8 w-8" />}
+              </AvatarFallback>
+            </Avatar>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Esta foto se muestra en el header cuando inicias sesión. Solo tú la ves.
+              </p>
+              <label className={avatarUploading ? 'pointer-events-none opacity-70' : ''}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                  disabled={avatarUploading}
+                />
+                <Button variant="outline" size="sm" asChild>
+                  <span className="cursor-pointer inline-flex items-center gap-2">
+                    <Upload className="w-4 h-4" />
+                    {avatarUploading ? 'Subiendo…' : 'Subir foto'}
+                  </span>
+                </Button>
+              </label>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="rounded-xl border border-red-500/35 bg-red-500/10 p-5 gradient-border">
           <div className="flex items-start gap-3">

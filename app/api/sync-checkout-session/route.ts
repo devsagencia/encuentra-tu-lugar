@@ -13,9 +13,17 @@ export async function POST(request: NextRequest) {
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const stripeSecret = process.env.STRIPE_SECRET_KEY;
 
-  if (!supabaseUrl || !supabaseServiceKey || !stripeSecret) {
-    console.error('[sync-checkout-session] Faltan variables de entorno');
-    return NextResponse.json({ error: 'Configuración incompleta' }, { status: 500 });
+  const missing = [
+    !supabaseUrl && 'NEXT_PUBLIC_SUPABASE_URL',
+    !supabaseServiceKey && 'SUPABASE_SERVICE_ROLE_KEY',
+    !stripeSecret && 'STRIPE_SECRET_KEY',
+  ].filter(Boolean) as string[];
+  if (missing.length) {
+    console.error('[sync-checkout-session] Faltan variables de entorno:', missing.join(', '));
+    return NextResponse.json(
+      { error: `Configuración incompleta en Vercel. Faltan: ${missing.join(', ')}. Añádelas en Environment Variables.` },
+      { status: 500 }
+    );
   }
 
   let body: { session_id?: string; user_id?: string };
@@ -72,7 +80,10 @@ export async function POST(request: NextRequest) {
 
   if (upsertError) {
     console.error('[sync-checkout-session] Error upsert subscription:', upsertError.message);
-    return NextResponse.json({ error: 'Error al guardar la suscripción' }, { status: 500 });
+    return NextResponse.json(
+      { error: `Error al guardar la suscripción: ${upsertError.message}` },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ ok: true, plan: planFinal });

@@ -113,10 +113,9 @@
 ## 🚧 FUNCIONALIDADES PENDIENTES / MEJORAS
 
 ### 🔴 Crítico / Alta Prioridad
-- ⚠️ **Probar flujo completo de pago Stripe** (no se ha probado aún)
-- ⚠️ **Verificar que el webhook funciona correctamente** en producción
-- ⚠️ **Gating de contenido según suscripción** (mostrar/ocultar contenido según plan)
-- ⚠️ **Panel de creador/anunciante** (gestión de su propio perfil y contenido)
+- ✅ ~~Probar flujo completo de pago Stripe~~ (probado; webhook + sync-checkout-session OK con service_role key)
+- ⚠️ **Gating de contenido según suscripción** (mostrar/ocultar según plan: public / registered / paid / vip)
+- ⚠️ **Panel de creador/anunciante** (gestión de su propio perfil y contenido desde /cuenta o panel dedicado)
 
 ### 🟡 Media Prioridad
 - ⚠️ **Mensajería interna** (sistema de mensajes entre usuarios)
@@ -148,10 +147,10 @@
 - ✅ Variables de entorno configuradas
 - ✅ Git y GitHub configurado
 
-### ⚠️ Pendiente de Verificación
-- ⚠️ Webhook de Stripe funcionando en producción
-- ⚠️ Variables de entorno en Vercel (verificar que todas están)
-- ⚠️ Price IDs de Stripe correctos en producción
+### ✅ Verificado en producción
+- ✅ Webhook de Stripe (checkout.session.completed, customer.subscription.created/updated/deleted)
+- ✅ SUPABASE_SERVICE_ROLE_KEY configurada (clave secreta) en Vercel
+- ✅ Sync de suscripción en Cuenta (Premium/VIP visible tras pago)
 
 ---
 
@@ -174,41 +173,45 @@
 
 ---
 
-## 🎯 PRÓXIMOS PASOS RECOMENDADOS
+## 🎯 ROADMAP — QUÉ SEGUIR PROGRAMANDO
 
-1. **Probar flujo de pago completo:**
-   - Crear un usuario de prueba
-   - Intentar suscribirse a un plan
-   - Verificar que el webhook actualiza la suscripción
-   - Verificar que el contenido se muestra según el plan
+### Fase inmediata (antes de lanzar)
 
-2. **Implementar gating de contenido:**
-   - Mostrar/ocultar contenido según plan del usuario
-   - Verificar visibilidad según `subscriptions.plan` y `subscriptions.status`
+| Orden | Tarea | Descripción |
+|-------|------|-------------|
+| 1 | **Gating de contenido** | Respetar visibilidad de media (`public` / `registered` / `paid` / `vip`) según si el usuario está logueado y su plan en `subscriptions`. Sin esto, pagar no cambia qué se ve. |
+| 2 | **Límites de favoritos** | Aplicar en backend y UI el límite de favoritos según plan (free vs premium vs vip) para que VIP tenga ventaja real. |
+| 3 | **Panel de creador** | En `/cuenta` o sección dedicada: que el anunciante vea y edite su perfil, suba/organice media y (opcional) estadísticas básicas. |
 
-3. **Crear panel de creador:**
-   - Página `/creador/panel` o `/cuenta/creador`
-   - Gestión de su propio perfil
-   - Subida y gestión de media
-   - Estadísticas propias
+### Siguiente fase (mejoras de producto)
 
-4. **Mejorar UX móvil:**
-   - Verificar todas las páginas en móvil
-   - Optimizar tablas y formularios
+| Orden | Tarea | Descripción |
+|-------|------|-------------|
+| 4 | **Paginación** | Listados de perfiles (inicio, búsqueda) con paginación o “cargar más” en lugar de cargar 50 de golpe. |
+| 5 | **Búsqueda/filtros** | Afinar filtros (ubicación, edad, idiomas, etc.) y que la búsqueda sea usable en móvil. |
+| 6 | **Emails de verificación** | Plantilla profesional ya creada en `supabase-email-templates/`; configurar en Supabase y (opcional) SMTP propio cuando tengas dominio. |
+| 7 | **Notificaciones** | Avisos por email (o in-app) para: perfil aprobado/rechazado, nuevo mensaje (si hay mensajería), renovación de suscripción. |
 
-5. **Testing:**
-   - Probar todos los flujos principales
-   - Verificar permisos y roles
-   - Probar casos edge
+### Después (mensajería y compliance)
+
+| Orden | Tarea | Descripción |
+|-------|------|-------------|
+| 8 | **Mensajería interna** | Chats entre visitantes y anunciantes dentro de la plataforma (tablas `threads` / `messages`, UI de conversaciones). |
+| 9 | **Verificación de teléfono** | Opcional para anunciantes (badge “teléfono verificado”) usando Supabase o proveedor SMS. |
+| 10 | **KYC / verificación de edad** | Si el plan técnico lo exige: flujo para creadores (verificación manual o proveedor externo) antes de publicar contenido de pago. |
+
+### Más adelante
+
+- Moderación automática (detección de texto/enlaces, opcionalmente imágenes).
+- Analytics para creadores (vistas, favoritos, conversiones).
+- Cambio/cancelación de suscripción desde la app (Stripe Customer Portal o flujo propio).
 
 ---
 
 ## 📝 NOTAS IMPORTANTES
 
-- **Stripe está configurado pero NO probado** - Es crítico probar el flujo completo antes de lanzar
-- **El webhook necesita la URL correcta** en Stripe Dashboard apuntando a Vercel
-- **Las variables de entorno deben estar en Vercel** para que funcione en producción
-- **El sistema de gating de contenido** aún no está implementado - los usuarios pueden ver todo independientemente de su plan
+- **Stripe y webhook** están probados en producción (service_role key correcta; suscripción se actualiza en Cuenta).
+- **Gating de contenido** sigue pendiente: hay que aplicar `profile_media.visibility` y `subscriptions.plan`/`status` en la UI y en las consultas.
 
 ---
 

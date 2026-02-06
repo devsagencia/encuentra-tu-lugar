@@ -45,12 +45,14 @@ export const ProfileInfo = ({ profile, currentUserId, profileId, onRated }: Prof
     if (!currentUserId || !profileId) return;
     let cancelled = false;
     setRatingLoading(true);
-    supabase
-      .from('profile_ratings')
-      .select('rating')
-      .eq('user_id', currentUserId)
-      .eq('profile_id', profileId)
-      .maybeSingle()
+    void Promise.resolve(
+      supabase
+        .from('profile_ratings')
+        .select('rating')
+        .eq('user_id', currentUserId)
+        .eq('profile_id', profileId)
+        .maybeSingle()
+    )
       .then(({ data, error }) => {
         if (cancelled) return;
         if (error) {

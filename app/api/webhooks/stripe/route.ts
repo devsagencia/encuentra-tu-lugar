@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 /**
  * Webhook de Stripe: al completar una suscripción, actualiza la tabla subscriptions.
  * En Stripe Dashboard → Developers → Webhooks añade: https://tu-dominio.com/api/webhooks/stripe
- * Eventos: checkout.session.completed, customer.subscription.updated, customer.subscription.deleted
+ * Eventos: checkout.session.completed, customer.subscription.created, customer.subscription.updated, customer.subscription.deleted
  * Requiere: STRIPE_WEBHOOK_SECRET, NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  */
 export async function POST(request: NextRequest) {
@@ -47,8 +47,8 @@ export async function POST(request: NextRequest) {
     if (type && planValue !== 'free') {
       planValue = `${planValue}_${type}`;
     }
-    
-    await supabase.from('subscriptions').upsert(
+
+    const { error } = await supabase.from('subscriptions').upsert(
       {
         user_id: userId,
         plan: planValue,
@@ -56,6 +56,12 @@ export async function POST(request: NextRequest) {
       },
       { onConflict: 'user_id' }
     );
+
+    if (error) {
+      console.error('[webhook] Supabase upsert error:', error.message, { userId, planValue, status });
+      throw error;
+    }
+    console.log('[webhook] Subscription synced:', { userId, planValue, status });
   };
 
   try {
@@ -72,11 +78,15 @@ export async function POST(request: NextRequest) {
           plan = (sub.metadata?.plan as string) || 'premium';
           type = sub.metadata?.type;
         }
+        console.log('[webhook] checkout.session.completed', { userId, plan, type, client_reference_id: session.client_reference_id });
         if (userId) {
           await syncSubscription(userId, plan, type, 'active');
+        } else {
+          console.error('[webhook] No userId in checkout.session.completed');
         }
         break;
       }
+      case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const sub = event.data.object as Stripe.Subscription;
         const userId = sub.metadata?.user_id;
@@ -85,6 +95,8 @@ export async function POST(request: NextRequest) {
         const active = sub.status === 'active';
         if (userId) {
           await syncSubscription(userId, plan, type, active ? 'active' : 'inactive');
+        } else {
+          console.warn('[webhook]', event.type, 'sin user_id en metadata:', sub.id);
         }
         break;
       }

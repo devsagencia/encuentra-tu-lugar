@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -34,14 +34,16 @@ type SubscriptionRow = {
 
 export default function CuentaPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { user, loading } = useAuth();
+  const { user, session, loading } = useAuth();
   const { count: favoritesCount, limit: favoritesLimit } = useFavorites();
 
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionRow | null>(null);
   const [fetching, setFetching] = useState(true);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const syncDoneRef = useRef(false);
 
   useEffect(() => {
     if (!loading && !user) router.push('/auth?next=/cuenta');
@@ -79,6 +81,42 @@ export default function CuentaPage() {
     if (user) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Al volver de Stripe con éxito, sincronizar suscripción en nuestra BD (por si el webhook no llegó)
+  useEffect(() => {
+    const stripeSuccess = searchParams.get('stripe') === 'success';
+    const sessionId = searchParams.get('session_id');
+    if (!stripeSuccess || !sessionId || !user || syncDoneRef.current) return;
+    syncDoneRef.current = true;
+
+    (async () => {
+      try {
+        const res = await fetch('/api/sync-checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sessionId, user_id: user.id }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          await load();
+          router.replace('/cuenta', { scroll: false });
+          toast({ title: 'Suscripción activada', description: 'Tu perfil ya aparece como Premium.' });
+        } else {
+          toast({
+            title: 'No se pudo sincronizar la suscripción',
+            description: (data?.error as string) || 'Intenta pulsar Actualizar en la sección Suscripción.',
+            variant: 'destructive',
+          });
+        }
+      } catch (e) {
+        toast({
+          title: 'Error de conexión',
+          description: 'No se pudo verificar la suscripción. Pulsa Actualizar en Suscripción.',
+          variant: 'destructive',
+        });
+      }
+    })();
+  }, [user, session, searchParams, router, toast, load]);
 
   const statusBadge = useMemo(() => {
     const status = profile?.status ?? 'pending';
@@ -327,18 +365,29 @@ export default function CuentaPage() {
         ) : null}
 
         <Card className="glass-card border-border">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="w-5 h-5" />
               Suscripción
             </CardTitle>
+            <Button variant="outline" size="sm" onClick={load} disabled={fetching}>
+              Actualizar
+            </Button>
           </CardHeader>
           <CardContent className="space-y-2">
             {subscription ? (
               <>
-                <p className="text-sm text-muted-foreground">
-                  Plan: <span className="text-foreground font-medium">{subscription.plan}</span>
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm text-muted-foreground">
+                    Plan: <span className="text-foreground font-medium">
+                      {subscription.plan.includes('vip') ? 'VIP' : subscription.plan.includes('premium') ? 'Premium' : subscription.plan}
+                      {subscription.plan.includes('_') ? ` (${subscription.plan.split('_')[1]})` : ''}
+                    </span>
+                  </p>
+                  {subscription.status === 'active' && (
+                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Activo</Badge>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground">
                   Estado: <span className="text-foreground font-medium">{subscription.status}</span>
                 </p>
@@ -347,9 +396,14 @@ export default function CuentaPage() {
                 </p>
               </>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                No hay suscripción registrada (por defecto: free/inactiva).
-              </p>
+              <>
+                <p className="text-sm text-muted-foreground">
+                  No hay suscripción registrada (por defecto: free/inactiva).
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Si acabas de pagar, pulsa &quot;Actualizar&quot; arriba. Si sigue sin aparecer, en Stripe → Developers → Webhooks revisa &quot;Recent deliveries&quot; para ver si el webhook se está llamando.
+                </p>
+              </>
             )}
           </CardContent>
         </Card>

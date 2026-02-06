@@ -367,6 +367,82 @@ export type Database = {
           },
         ]
       }
+      profile_ratings: {
+        Row: {
+          id: string
+          user_id: string
+          profile_id: string
+          rating: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          profile_id: string
+          rating: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          profile_id?: string
+          rating?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_ratings_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          id: string
+          reporter_id: string
+          profile_id: string
+          reason: string
+          description: string | null
+          status: string
+          created_at: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+        }
+        Insert: {
+          id?: string
+          reporter_id: string
+          profile_id: string
+          reason: string
+          description?: string | null
+          status?: string
+          created_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+        }
+        Update: {
+          id?: string
+          reporter_id?: string
+          profile_id?: string
+          reason?: string
+          description?: string | null
+          status?: string
+          created_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -384,6 +460,13 @@ export type Database = {
           p_profile_id: string
         }
         Returns: void
+      }
+      get_user_emails_for_admin: {
+        Args: Record<string, never>
+        Returns: Array<{
+          user_id: string
+          email: string | null
+        }>
       }
     }
     Enums: {

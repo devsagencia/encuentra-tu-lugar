@@ -13,9 +13,18 @@ export async function POST(request: NextRequest) {
   const pricePremiumAnunciante = process.env.STRIPE_PRICE_PREMIUM_ANUNCIANTE;
   const priceVipAnunciante = process.env.STRIPE_PRICE_VIP_ANUNCIANTE;
 
-  if (!secret) {
+  // Log qué variables faltan (sin mostrar valores) para depuración en Vercel
+  const missing = [
+    !secret && 'STRIPE_SECRET_KEY',
+    !pricePremiumVisitante && 'STRIPE_PRICE_PREMIUM_VISITANTE',
+    !priceVipVisitante && 'STRIPE_PRICE_VIP_VISITANTE',
+    !pricePremiumAnunciante && 'STRIPE_PRICE_PREMIUM_ANUNCIANTE',
+    !priceVipAnunciante && 'STRIPE_PRICE_VIP_ANUNCIANTE',
+  ].filter(Boolean) as string[];
+  if (missing.length) {
+    console.error('[create-checkout-session] Faltan en Vercel:', missing.join(', '));
     return NextResponse.json(
-      { error: 'Stripe no configurado (falta STRIPE_SECRET_KEY)' },
+      { error: `Configuración incompleta en Vercel. Faltan: ${missing.join(', ')}. Añádelas en Settings → Environment Variables y redeploy.` },
       { status: 500 }
     );
   }
@@ -50,9 +59,11 @@ export async function POST(request: NextRequest) {
     priceId = priceVipAnunciante;
   }
 
-  if (!priceId) {
+  if (!priceId || !priceId.startsWith('price_')) {
     return NextResponse.json(
-      { error: `Falta STRIPE_PRICE_${plan.toUpperCase()}_${type.toUpperCase()} en la configuración` },
+      {
+        error: `Falta o es inválido STRIPE_PRICE_${plan.toUpperCase()}_${type.toUpperCase()} en Vercel. Debe ser un Price ID de Stripe (empieza con price_). Revisa Environment Variables.`,
+      },
       { status: 500 }
     );
   }
@@ -82,6 +93,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: session.url });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Error al crear la sesión';
+    console.error('[create-checkout-session] Stripe error:', err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

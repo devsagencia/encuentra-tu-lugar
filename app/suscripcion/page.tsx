@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 type PlanId = 'free' | 'premium' | 'vip';
+type PlanType = 'anunciante' | 'visitante';
 
 const VISITANTE_PLANS = [
   {
@@ -115,6 +116,7 @@ function PlanCard({
   features,
   onSelect,
   loading,
+  type,
 }: {
   id: PlanId;
   title: string;
@@ -124,8 +126,9 @@ function PlanCard({
   highlight?: boolean;
   badge?: string;
   features: readonly string[];
-  onSelect: (id: PlanId) => void | Promise<void>;
+  onSelect: (id: PlanId, type: PlanType) => void | Promise<void>;
   loading: boolean;
+  type: PlanType;
 }) {
   return (
     <Card className={`glass-card border-border ${highlight ? 'ring-1 ring-primary/40' : ''}`}>
@@ -165,7 +168,7 @@ function PlanCard({
         <Button
           className={`w-full ${highlight ? 'bg-primary hover:bg-primary/90' : ''}`}
           variant={highlight ? 'default' : 'outline'}
-          onClick={() => onSelect(id)}
+          onClick={() => onSelect(id, type)}
           disabled={loading}
         >
           {loading ? 'Procesando…' : id === 'free' ? 'Usar Gratis' : `Elegir ${title}`}
@@ -194,7 +197,7 @@ export default function SuscripcionPage() {
 
   const canUse = useMemo(() => !loading && Boolean(user), [loading, user]);
 
-  const setPlan = async (plan: PlanId) => {
+  const setPlan = async (plan: PlanId, type: 'anunciante' | 'visitante' = 'visitante') => {
     if (!user) {
       toast({
         title: 'Inicia sesión',
@@ -225,7 +228,7 @@ export default function SuscripcionPage() {
       const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan, user_id: user.id }),
+        body: JSON.stringify({ plan, user_id: user.id, type }),
       });
       const data = await res.json().catch(() => ({}));
       setSaving(null);
@@ -287,6 +290,7 @@ export default function SuscripcionPage() {
                   {...p}
                   onSelect={setPlan}
                   loading={saving === p.id}
+                  type="visitante"
                 />
               ))}
             </div>
@@ -300,6 +304,7 @@ export default function SuscripcionPage() {
                   {...p}
                   onSelect={setPlan}
                   loading={saving === p.id}
+                  type="anunciante"
                 />
               ))}
             </div>

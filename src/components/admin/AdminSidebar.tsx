@@ -22,12 +22,14 @@ interface AdminSidebarProps {
   activeView: AdminView;
   setActiveView: (view: AdminView) => void;
   isAdmin: boolean;
+  onNavigate?: () => void;
 }
 
 export const AdminSidebar = ({
   activeView,
   setActiveView,
   isAdmin,
+  onNavigate,
 }: AdminSidebarProps) => {
   const { signOut, user } = useAuth();
   const router = useRouter();
@@ -35,6 +37,11 @@ export const AdminSidebar = ({
   const handleSignOut = async () => {
     await signOut();
     router.push('/');
+  };
+
+  const handleNavigate = (view: AdminView) => {
+    setActiveView(view);
+    onNavigate?.();
   };
 
   const menuItems = [
@@ -53,7 +60,7 @@ export const AdminSidebar = ({
   ];
 
   return (
-    <aside className="w-64 border-r border-border bg-card flex flex-col">
+    <div className="h-full flex flex-col bg-card">
       {/* Logo */}
       <div className="p-6 border-b border-border">
         <h1 className="text-xl font-display font-bold text-gradient">
@@ -73,7 +80,7 @@ export const AdminSidebar = ({
                 ? 'bg-primary/10 text-primary'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
-            onClick={() => setActiveView(item.id)}
+            onClick={() => handleNavigate(item.id)}
           >
             <item.icon className="w-4 h-4 mr-3" />
             {item.label}
@@ -100,6 +107,6 @@ export const AdminSidebar = ({
           Cerrar sesión
         </Button>
       </div>
-    </aside>
+    </div>
   );
 };

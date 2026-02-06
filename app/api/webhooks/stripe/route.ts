@@ -41,11 +41,17 @@ export async function POST(request: NextRequest) {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   const stripeSecret = process.env.STRIPE_SECRET_KEY;
 
-  const syncSubscription = async (userId: string, plan: string, status: 'active' | 'inactive') => {
+  const syncSubscription = async (userId: string, plan: string, type: string | undefined, status: 'active' | 'inactive') => {
+    // Formato del plan: "premium_visitante", "vip_anunciante", etc.
+    let planValue = plan === 'vip' ? 'vip' : plan === 'premium' ? 'premium' : 'free';
+    if (type && planValue !== 'free') {
+      planValue = `${planValue}_${type}`;
+    }
+    
     await supabase.from('subscriptions').upsert(
       {
         user_id: userId,
-        plan: plan === 'vip' ? 'vip' : plan === 'premium' ? 'premium' : 'free',
+        plan: planValue,
         status,
       },
       { onConflict: 'user_id' }
@@ -58,14 +64,16 @@ export async function POST(request: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session;
         let userId = session.client_reference_id ?? null;
         let plan = 'premium';
+        let type: string | undefined;
         if (session.subscription && typeof session.subscription === 'string' && stripeSecret) {
           const stripe = new Stripe(stripeSecret);
           const sub = await stripe.subscriptions.retrieve(session.subscription);
           userId = sub.metadata?.user_id ?? userId;
           plan = (sub.metadata?.plan as string) || 'premium';
+          type = sub.metadata?.type;
         }
         if (userId) {
-          await syncSubscription(userId, plan, 'active');
+          await syncSubscription(userId, plan, type, 'active');
         }
         break;
       }
@@ -73,9 +81,10 @@ export async function POST(request: NextRequest) {
         const sub = event.data.object as Stripe.Subscription;
         const userId = sub.metadata?.user_id;
         const plan = sub.metadata?.plan || 'premium';
+        const type = sub.metadata?.type;
         const active = sub.status === 'active';
         if (userId) {
-          await syncSubscription(userId, plan, active ? 'active' : 'inactive');
+          await syncSubscription(userId, plan, type, active ? 'active' : 'inactive');
         }
         break;
       }
@@ -83,7 +92,7 @@ export async function POST(request: NextRequest) {
         const sub = event.data.object as Stripe.Subscription;
         const userId = sub.metadata?.user_id;
         if (userId) {
-          await syncSubscription(userId, 'free', 'inactive');
+          await syncSubscription(userId, 'free', undefined, 'inactive');
         }
         break;
       }

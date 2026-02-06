@@ -266,62 +266,64 @@ export function AdminUsers() {
           ) : filtered.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">Sin resultados</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="font-mono text-xs">user_id</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Rol</TableHead>
-                  <TableHead>Perfil / Anunciante</TableHead>
-                  <TableHead>Creado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((r) => {
-                  const profile = profilesByUserId[r.user_id];
-                  return (
-                    <TableRow key={r.id}>
-                      <TableCell className="font-mono text-xs text-muted-foreground" title={r.user_id}>
-                        {r.user_id.slice(0, 8)}…
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {emailsByUserId[r.user_id] ?? (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>{roleBadge(r.role)}</TableCell>
-                      <TableCell>
-                        {profile ? (
-                          <div className="flex items-center gap-2">
-                            <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
-                              <Megaphone className="w-3 h-3 mr-1" />
-                              Anunciante
-                            </Badge>
-                            <span className="font-medium">{profile.name}</span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">Usuario (sin perfil)</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {new Date(r.created_at).toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => handleRevoke(r.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <div className="overflow-x-auto -mx-6 px-6">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="font-mono text-xs whitespace-nowrap">user_id</TableHead>
+                    <TableHead className="whitespace-nowrap">Email</TableHead>
+                    <TableHead className="whitespace-nowrap">Rol</TableHead>
+                    <TableHead className="whitespace-nowrap">Perfil / Anunciante</TableHead>
+                    <TableHead className="whitespace-nowrap">Creado</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((r) => {
+                    const profile = profilesByUserId[r.user_id];
+                    return (
+                      <TableRow key={r.id}>
+                        <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap" title={r.user_id}>
+                          {r.user_id.slice(0, 8)}…
+                        </TableCell>
+                        <TableCell className="text-sm whitespace-nowrap">
+                          {emailsByUserId[r.user_id] ?? (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">{roleBadge(r.role)}</TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {profile ? (
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+                                <Megaphone className="w-3 h-3 mr-1" />
+                                Anunciante
+                              </Badge>
+                              <span className="font-medium">{profile.name}</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">Usuario (sin perfil)</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
+                          {new Date(r.created_at).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleRevoke(r.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

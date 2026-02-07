@@ -11,12 +11,14 @@ interface ProfileGalleryProps {
   images: string[];
   videos: string[];
   name: string;
-  /** Número de imágenes privadas (solo para mostrar placeholders desenfocados). */
+  /** Número de placeholders de imágenes a mostrar (contenido bloqueado por plan). */
   privateImagesCount?: number;
-  /** Número de vídeos privados (solo para mostrar placeholders desenfocados). */
+  /** Número de placeholders de vídeos a mostrar (contenido bloqueado por plan). */
   privateVideosCount?: number;
-  /** Si true, se muestran placeholders desenfocados para el contenido privado (visitantes sin login). */
+  /** Si true, se muestran placeholders y mensaje de upgrade. */
   showPrivateBlurred?: boolean;
+  /** Mensaje personalizado (ej. "Hazte Premium o VIP para ver más"). Si no se pasa, se usa "Inicia sesión para verlo". */
+  upgradeMessage?: string;
 }
 
 const PrivatePlaceholder = ({
@@ -48,6 +50,7 @@ export const ProfileGallery = ({
   privateImagesCount = 0,
   privateVideosCount = 0,
   showPrivateBlurred = false,
+  upgradeMessage,
 }: ProfileGalleryProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -178,15 +181,26 @@ export const ProfileGallery = ({
         </div>
       )}
 
-      {/* Mensaje para visitantes: hay contenido privado */}
+      {/* Mensaje: contenido bloqueado por plan o no logueado */}
       {showPrivateBlurred && (privateImagesCount > 0 || privateVideosCount > 0) && (
         <div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3 text-center text-sm text-muted-foreground">
           <Lock className="w-4 h-4 inline-block mr-1.5 align-middle" />
-          Este perfil tiene contenido exclusivo para usuarios registrados.
-          <Link href="/auth" className="ml-1.5 font-medium text-primary hover:underline">
-            Inicia sesión
-          </Link>
-          {' '}para verlo.
+          {upgradeMessage ? (
+            <>
+              {upgradeMessage}
+              <Link href="/tarifas" className="ml-1.5 font-medium text-primary hover:underline">
+                Ver planes
+              </Link>
+            </>
+          ) : (
+            <>
+              Este perfil tiene contenido exclusivo para usuarios registrados.
+              <Link href="/auth" className="ml-1.5 font-medium text-primary hover:underline">
+                Inicia sesión
+              </Link>
+              {' '}para verlo.
+            </>
+          )}
         </div>
       )}
 

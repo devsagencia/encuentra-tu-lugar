@@ -47,6 +47,9 @@ export default function ProfilePage() {
   const { isFavorite, toggle, canAdd, limit, togglingId } = useFavorites();
   const { toast } = useToast();
   const [profile, setProfile] = useState<any>(null);
+  const [subscription, setSubscription] = useState<{ plan: string; status: string } | null>(null);
+  const [lockedImagesCount, setLockedImagesCount] = useState(0);
+  const [lockedVideosCount, setLockedVideosCount] = useState(0);
   const [fetching, setFetching] = useState(true);
   const viewRecordedRef = useRef(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -60,13 +63,18 @@ export default function ProfilePage() {
 
   const refetchProfile = async () => {
     if (!id) return;
-    const sel = 'id,user_id,name,age,category,city,description,zone,postal_code,languages,available_days,accompaniment_types,hair_color,height_cm,weight_kg,profession,nationality,birth_place,image_url,rating,reviews_count,views_count,verified,phone_verified,premium,public_plan,tags,phone,whatsapp,schedule,status,profile_media(id,media_type,visibility,public_url,storage_path,position)';
+    const sel = 'id,user_id,name,age,category,city,description,zone,postal_code,languages,available_days,accompaniment_types,hair_color,height_cm,weight_kg,profession,nationality,birth_place,image_url,rating,reviews_count,views_count,verified,phone_verified,premium,public_plan,private_images_count,private_videos_count,tags,phone,whatsapp,schedule,status,profile_media(id,media_type,visibility,public_url,storage_path,position)';
     const { data } = await supabase.from('profiles').select(sel).eq('id', id).maybeSingle();
     if (data?.id) {
       const row = data as any;
       if (row.private_images_count == null) row.private_images_count = 0;
       if (row.private_videos_count == null) row.private_videos_count = 0;
       setProfile(toProfileCardModel(row, row.profile_media ?? []));
+      const media = row.profile_media ?? [];
+      const returnedPrivateImages = media.filter((m: { media_type: string; visibility: string }) => m.media_type === 'image' && m.visibility !== 'public').length;
+      const returnedPrivateVideos = media.filter((m: { media_type: string; visibility: string }) => m.media_type === 'video' && m.visibility !== 'public').length;
+      setLockedImagesCount(Math.max(0, (row.private_images_count ?? 0) - returnedPrivateImages));
+      setLockedVideosCount(Math.max(0, (row.private_videos_count ?? 0) - returnedPrivateVideos));
     }
   };
 
@@ -206,11 +214,26 @@ export default function ProfilePage() {
 
       if (!data) {
         setProfile(null);
+        setLockedImagesCount(0);
+        setLockedVideosCount(0);
         setFetching(false);
         return;
       }
 
-      const mapped = toProfileCardModel(data, data.profile_media ?? []);
+      const media = data.profile_media ?? [];
+      const returnedPrivateImages = media.filter((m: { media_type: string; visibility: string }) => m.media_type === 'image' && m.visibility !== 'public').length;
+      const returnedPrivateVideos = media.filter((m: { media_type: string; visibility: string }) => m.media_type === 'video' && m.visibility !== 'public').length;
+      setLockedImagesCount(Math.max(0, (data.private_images_count ?? 0) - returnedPrivateImages));
+      setLockedVideosCount(Math.max(0, (data.private_videos_count ?? 0) - returnedPrivateVideos));
+
+      if (user) {
+        const { data: sub } = await supabase.from('subscriptions').select('plan,status').eq('user_id', user.id).maybeSingle();
+        setSubscription(sub ? { plan: sub.plan, status: sub.status } : null);
+      } else {
+        setSubscription(null);
+      }
+
+      const mapped = toProfileCardModel(data, media);
       setProfile(mapped);
       setFetching(false);
 
@@ -225,7 +248,7 @@ export default function ProfilePage() {
     };
 
     if (!loading) load();
-  }, [id, loading]);
+  }, [id, loading, user?.id]);
 
   if (fetching) {
     return (
@@ -368,9 +391,20 @@ export default function ProfilePage() {
               images={profile.images}
               videos={profile.videos}
               name={profile.name}
-              privateImagesCount={profile.privateImagesCount ?? 0}
-              privateVideosCount={profile.privateVideosCount ?? 0}
-              showPrivateBlurred={!user}
+              privateImagesCount={lockedImagesCount}
+              privateVideosCount={lockedVideosCount}
+              showPrivateBlurred={lockedImagesCount > 0 || lockedVideosCount > 0}
+              upgradeMessage={
+                lockedImagesCount > 0 || lockedVideosCount > 0
+                  ? !user
+                    ? undefined
+                    : subscription?.status === 'active' && subscription.plan.includes('vip')
+                      ? undefined
+                      : subscription?.status === 'active' && (subscription.plan.includes('premium') || subscription.plan.includes('vip'))
+                        ? 'Hazte VIP para ver todo el contenido.'
+                        : 'Hazte Premium o VIP para ver más contenido.'
+                  : undefined
+              }
             />
           </div>
 

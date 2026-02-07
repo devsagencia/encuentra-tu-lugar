@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, RefreshCcw } from 'lucide-react';
+import { CreditCard, RefreshCcw, Copy } from 'lucide-react';
 
 type SubStatus = 'inactive' | 'active' | 'past_due' | 'canceled';
 
@@ -44,6 +44,7 @@ export function AdminSubscriptions() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<SubscriptionRow[]>([]);
+  const [emailByUserId, setEmailByUserId] = useState<Record<string, string>>({});
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<SubStatus | 'all'>('all');
@@ -59,20 +60,36 @@ export function AdminSubscriptions() {
     setLoading(true);
     let query = supabase.from('subscriptions').select('*').order('updated_at', { ascending: false });
     if (statusFilter !== 'all') query = query.eq('status', statusFilter);
-    const { data, error } = await query;
+    const [subsRes, emailsRes] = await Promise.all([
+      query,
+      supabase.rpc('get_user_emails_for_admin'),
+    ]);
 
-    if (error) {
+    if (subsRes.error) {
       toast({
         title: 'Error al cargar suscripciones',
-        description: error.message,
+        description: subsRes.error.message,
         variant: 'destructive',
       });
       setLoading(false);
       return;
     }
 
-    setRows((data as SubscriptionRow[]) ?? []);
+    const emails = (emailsRes.data ?? []) as { user_id: string; email: string | null }[];
+    const map: Record<string, string> = {};
+    emails.forEach((e) => {
+      if (e.user_id && e.email) map[e.user_id] = e.email;
+    });
+    setEmailByUserId(map);
+    setRows((subsRes.data as SubscriptionRow[]) ?? []);
     setLoading(false);
+  };
+
+  const copyUserId = (id: string) => {
+    navigator.clipboard.writeText(id).then(
+      () => toast({ title: 'ID copiado', description: 'user_id copiado al portapapeles.' }),
+      () => toast({ title: 'Error', description: 'No se pudo copiar.', variant: 'destructive' })
+    );
   };
 
   useEffect(() => {
@@ -81,10 +98,17 @@ export function AdminSubscriptions() {
   }, [statusFilter]);
 
   const filtered = useMemo(() => {
-    return rows.filter((r) =>
-      search ? r.user_id.toLowerCase().includes(search.toLowerCase()) || r.plan.toLowerCase().includes(search.toLowerCase()) : true
-    );
-  }, [rows, search]);
+    if (!search.trim()) return rows;
+    const q = search.toLowerCase().trim();
+    return rows.filter((r) => {
+      const email = emailByUserId[r.user_id] ?? '';
+      return (
+        r.user_id.toLowerCase().includes(q) ||
+        r.plan.toLowerCase().includes(q) ||
+        email.toLowerCase().includes(q)
+      );
+    });
+  }, [rows, search, emailByUserId]);
 
   const statusBadge = (s: SubStatus) => {
     switch (s) {
@@ -212,7 +236,7 @@ export function AdminSubscriptions() {
         <CardContent className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <Input
-              placeholder="Buscar por user_id o plan…"
+              placeholder="Buscar por email, user_id o plan…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -235,32 +259,53 @@ export function AdminSubscriptions() {
           ) : filtered.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">Sin resultados</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>user_id</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Fin periodo</TableHead>
-                  <TableHead>Actualizado</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="font-mono text-xs">{r.user_id}</TableCell>
-                    <TableCell className="font-medium">{r.plan}</TableCell>
-                    <TableCell>{statusBadge(r.status)}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {r.current_period_end ? new Date(r.current_period_end).toLocaleDateString() : '-'}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {new Date(r.updated_at).toLocaleString()}
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>user_id</TableHead>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Fin periodo</TableHead>
+                    <TableHead>Actualizado</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell className="text-foreground">
+                        {emailByUserId[r.user_id] ?? (
+                          <span className="text-muted-foreground italic">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-xs break-all">{r.user_id}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 shrink-0"
+                            onClick={() => copyUserId(r.user_id)}
+                            title="Copiar user_id"
+                          >
+                            <Copy className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">{r.plan}</TableCell>
+                      <TableCell>{statusBadge(r.status)}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {r.current_period_end ? new Date(r.current_period_end).toLocaleDateString() : '-'}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(r.updated_at).toLocaleString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

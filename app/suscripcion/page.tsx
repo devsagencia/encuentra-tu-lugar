@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -195,8 +195,27 @@ export default function SuscripcionPage() {
   const { toast } = useToast();
   const [saving, setSaving] = useState<PlanId | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [hasAnuncianteProfile, setHasAnuncianteProfile] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setHasAnuncianteProfile(null);
+      return;
+    }
+    supabase
+      .from('profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => setHasAnuncianteProfile(Boolean(data)));
+  }, [user?.id]);
 
   const canUse = useMemo(() => !loading && Boolean(user), [loading, user]);
+
+  /** Si el usuario tiene perfil de anunciante, solo ver planes anunciante. Si no, solo visitante. Sin login mostramos ambos. */
+  const showOnlyAnunciante = hasAnuncianteProfile === true;
+  const showOnlyVisitante = user && hasAnuncianteProfile === false;
+  const showBothTabs = !user || hasAnuncianteProfile === null;
 
   const setPlan = async (plan: PlanId, type: 'anunciante' | 'visitante' = 'visitante') => {
     setCheckoutError(null);
@@ -282,27 +301,44 @@ export default function SuscripcionPage() {
           ) : null}
         </div>
 
-        <Tabs defaultValue="visitantes" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-md">
-            <TabsTrigger value="visitantes">Visitantes</TabsTrigger>
-            <TabsTrigger value="anunciantes">Anunciantes</TabsTrigger>
-          </TabsList>
+        {showBothTabs ? (
+          <Tabs defaultValue="visitantes" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 max-w-md">
+              <TabsTrigger value="visitantes">Visitantes</TabsTrigger>
+              <TabsTrigger value="anunciantes">Anunciantes</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="visitantes" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {VISITANTE_PLANS.map((p) => (
-                <PlanCard
-                  key={p.id}
-                  {...p}
-                  onSelect={setPlan}
-                  loading={saving === p.id}
-                  type="visitante"
-                />
-              ))}
-            </div>
-          </TabsContent>
+            <TabsContent value="visitantes" className="mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {VISITANTE_PLANS.map((p) => (
+                  <PlanCard
+                    key={p.id}
+                    {...p}
+                    onSelect={setPlan}
+                    loading={saving === p.id}
+                    type="visitante"
+                  />
+                ))}
+              </div>
+            </TabsContent>
 
-          <TabsContent value="anunciantes" className="mt-6">
+            <TabsContent value="anunciantes" className="mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {ANUNCIANTE_PLANS.map((p) => (
+                  <PlanCard
+                    key={p.id}
+                    {...p}
+                    onSelect={setPlan}
+                    loading={saving === p.id}
+                    type="anunciante"
+                  />
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
+        ) : showOnlyAnunciante ? (
+          <div className="mt-6">
+            <p className="text-muted-foreground mb-4">Planes para tu perfil de anunciante.</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {ANUNCIANTE_PLANS.map((p) => (
                 <PlanCard
@@ -314,8 +350,23 @@ export default function SuscripcionPage() {
                 />
               ))}
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        ) : (
+          <div className="mt-6">
+            <p className="text-muted-foreground mb-4">Planes para visitantes (ver contenido y favoritos).</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {VISITANTE_PLANS.map((p) => (
+                <PlanCard
+                  key={p.id}
+                  {...p}
+                  onSelect={setPlan}
+                  loading={saving === p.id}
+                  type="visitante"
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

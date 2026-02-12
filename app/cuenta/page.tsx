@@ -370,9 +370,11 @@ function CuentaContent() {
               <CreditCard className="w-5 h-5" />
               Suscripción
             </CardTitle>
-            <Button variant="outline" size="sm" onClick={load} disabled={fetching}>
-              Actualizar
-            </Button>
+            {subscription ? (
+              <Button variant="outline" size="sm" onClick={load} disabled={fetching}>
+                Actualizar
+              </Button>
+            ) : null}
           </CardHeader>
           <CardContent className="space-y-2">
             {subscription ? (
@@ -398,11 +400,14 @@ function CuentaContent() {
             ) : (
               <>
                 <p className="text-sm text-muted-foreground">
-                  No hay suscripción registrada (por defecto: free/inactiva).
+                  No tienes suscripción activa. Pasa a Premium o VIP para desbloquear más contenido y ventajas.
                 </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Si acabas de pagar, pulsa &quot;Actualizar&quot; arriba. Si sigue sin aparecer, en Stripe → Developers → Webhooks revisa &quot;Recent deliveries&quot; para ver si el webhook se está llamando.
-                </p>
+                <Button
+                  className="mt-3"
+                  onClick={() => router.push('/tarifas')}
+                >
+                  Ver planes y precios
+                </Button>
               </>
             )}
           </CardContent>

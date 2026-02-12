@@ -73,9 +73,12 @@ export function ProfileMediaManager({
       .select('plan,status')
       .eq('user_id', ownerUserId)
       .maybeSingle();
-    const p = (sub?.plan as 'free' | 'premium' | 'vip' | undefined) || 'free';
+    const raw = (sub?.plan as string | undefined) || 'free';
     const active = sub?.status === 'active';
-    setPlan(active ? p : 'free');
+    // Normalizar: en BD el plan es "vip_anunciante", "premium_visitante", etc.
+    const p: 'free' | 'premium' | 'vip' =
+      !active ? 'free' : raw.includes('vip') ? 'vip' : raw.includes('premium') ? 'premium' : 'free';
+    setPlan(p);
 
     setLoading(false);
   };

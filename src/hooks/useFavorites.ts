@@ -30,8 +30,10 @@ export function useFavorites() {
     setLoading(true);
 
     const subRes = await supabase.from('subscriptions').select('plan, status').eq('user_id', user.id).maybeSingle();
-    const plan = subRes.data?.status === 'active' ? (subRes.data?.plan ?? 'free') : 'free';
-    setLimit(FAVORITE_LIMITS[plan] ?? 0);
+    const raw = (subRes.data?.plan as string | undefined) ?? 'free';
+    const active = subRes.data?.status === 'active';
+    const planKey = !active ? 'free' : raw.includes('vip') ? 'vip' : raw.includes('premium') ? 'premium' : 'free';
+    setLimit(FAVORITE_LIMITS[planKey] ?? 0);
 
     const favRes = await supabase.from('favorites').select('profile_id').eq('user_id', user.id);
     if (favRes.error) {
